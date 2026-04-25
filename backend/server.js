@@ -20,10 +20,8 @@ app.get("/", (req, res) => {
   res.json({ message: "Uni in Your Pocket API is running" });
 });
 
-// Routes will be added here later
-// app.use("/api/auth", require("./routes/authRoutes"));
-// app.use("/api/courses", require("./routes/courseRoutes"));
-// etc.
+// Routes
+app.use("/api/auth", require("./routes/authRoutes"));
 
 const PORT = process.env.PORT || 5000;
 

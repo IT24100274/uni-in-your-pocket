@@ -34,3 +34,5 @@ export const loginUser = (credentials) => api.post("/auth/login", credentials);
 export const getMe = () => api.get("/auth/me");
 
 export default api;
+
+//Updated APi.js

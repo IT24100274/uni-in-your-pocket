@@ -8,6 +8,7 @@ import {
   TouchableOpacity,
   Alert,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import api from "../../services/api";
 
 const ManageEnrollmentsScreen = ({ route }) => {
@@ -210,7 +211,7 @@ const ManageEnrollmentsScreen = ({ route }) => {
   }
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container}>
       {/* Bulk action bar — only shows when pending enrollments exist */}
       {pendingEnrollments.length > 0 && (
         <View style={styles.bulkBar}>
@@ -345,7 +346,7 @@ const ManageEnrollmentsScreen = ({ route }) => {
           <Text style={styles.emptyText}>No enrollment requests yet</Text>
         }
       />
-    </View>
+    </SafeAreaView>
   );
 };
 

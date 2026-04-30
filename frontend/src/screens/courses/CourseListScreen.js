@@ -8,6 +8,7 @@ import {
   ActivityIndicator,
   TextInput,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import api from "../../services/api";
 
 const CourseListScreen = ({ navigation }) => {
@@ -54,7 +55,7 @@ const CourseListScreen = ({ navigation }) => {
   }
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container}>
       {/* Search bar */}
       <TextInput
         style={styles.searchInput}
@@ -102,7 +103,7 @@ const CourseListScreen = ({ navigation }) => {
           <Text style={styles.emptyText}>No courses found</Text>
         }
       />
-    </View>
+    </SafeAreaView>
   );
 };
 

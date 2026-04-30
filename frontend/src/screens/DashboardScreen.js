@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { View, Text } from "react-native";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
+import Ionicons from "@expo/vector-icons/Ionicons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
 // Existing tab screens
@@ -56,14 +57,24 @@ const DashboardScreen = () => {
       <Tab.Screen
         name="Home"
         component={HomeScreen}
-        options={{ tabBarLabel: "Home" }}
+        options={{
+          tabBarLabel: "Home",
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="home-outline" color={color} size={size} />
+          ),
+        }}
       />
 
       {/* Courses tab — everyone sees this */}
       <Tab.Screen
         name="Courses"
         component={CourseListScreen}
-        options={{ tabBarLabel: "Courses" }}
+        options={{
+          tabBarLabel: "Courses",
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="book-outline" color={color} size={size} />
+          ),
+        }}
       />
 
       {/* Student sees My Enrollments tab */}
@@ -72,7 +83,12 @@ const DashboardScreen = () => {
         <Tab.Screen
           name="MyEnrollments"
           component={MyEnrollmentsScreen}
-          options={{ tabBarLabel: "Enrollments" }}
+          options={{
+            tabBarLabel: "Enrollments",
+            tabBarIcon: ({ color, size }) => (
+              <Ionicons name="checkmark-circle-outline" color={color} size={size} />
+            ),
+          }}
         />
       )}
 
@@ -81,7 +97,12 @@ const DashboardScreen = () => {
         <Tab.Screen
           name="MyCourses"
           component={MyCoursesScreen}
-          options={{ tabBarLabel: "My Courses" }}
+          options={{
+            tabBarLabel: "My Courses",
+            tabBarIcon: ({ color, size }) => (
+              <Ionicons name="library-outline" color={color} size={size} />
+            ),
+          }}
         />
       )}
 
@@ -90,7 +111,12 @@ const DashboardScreen = () => {
         <Tab.Screen
           name="ManageEnrollments"
           component={ManageEnrollmentsScreen}
-          options={{ tabBarLabel: "Enrollments" }}
+          options={{
+            tabBarLabel: "Enrollments",
+            tabBarIcon: ({ color, size }) => (
+              <Ionicons name="checkmark-circle-outline" color={color} size={size} />
+            ),
+          }}
         />
       )}
 
@@ -99,7 +125,12 @@ const DashboardScreen = () => {
         <Tab.Screen
           name="Users"
           component={AdminScreen}
-          options={{ tabBarLabel: "Users" }}
+          options={{
+            tabBarLabel: "Users",
+            tabBarIcon: ({ color, size }) => (
+              <Ionicons name="people-outline" color={color} size={size} />
+            ),
+          }}
         />
       )}
 
@@ -107,7 +138,12 @@ const DashboardScreen = () => {
       <Tab.Screen
         name="Settings"
         component={SettingsScreen}
-        options={{ tabBarLabel: "Settings" }}
+        options={{
+          tabBarLabel: "Settings",
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="settings-outline" color={color} size={size} />
+          ),
+        }}
       />
     </Tab.Navigator>
   );

@@ -8,6 +8,7 @@ import {
   ActivityIndicator,
   Alert,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import api from "../../services/api";
 
 const MyCoursesScreen = ({ navigation }) => {
@@ -76,7 +77,7 @@ const MyCoursesScreen = ({ navigation }) => {
   }
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container}>
       {/* Create new course button */}
       <TouchableOpacity
         style={styles.createBtn}
@@ -154,7 +155,7 @@ const MyCoursesScreen = ({ navigation }) => {
           </View>
         }
       />
-    </View>
+    </SafeAreaView>
   );
 };
 

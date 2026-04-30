@@ -7,6 +7,7 @@ import {
   ActivityIndicator,
   TouchableOpacity,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import api from "../../services/api";
 
 const MyEnrollmentsScreen = ({ navigation }) => {
@@ -58,7 +59,7 @@ const MyEnrollmentsScreen = ({ navigation }) => {
   }
 
   return (
-    <View style={styles.container}>
+    <SafeAreaView style={styles.container}>
       <FlatList
         data={enrollments}
         keyExtractor={(item) => item._id}
@@ -137,7 +138,7 @@ const MyEnrollmentsScreen = ({ navigation }) => {
           </View>
         }
       />
-    </View>
+    </SafeAreaView>
   );
 };
 

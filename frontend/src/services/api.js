@@ -1,10 +1,9 @@
 import axios from "axios";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
-// Each team member changes ONLY this line to their own laptop's WiFi IP
-// Run 'ipconfig' (Windows) or 'ifconfig' (Mac) to find it
-// During deployment, change this to your Azure URL
-const API_URL = "http://192.168.8.155:5000/api";
+
+// During deployment, we will change this to our Render/Aure URL
+const API_URL = process.env.EXPO_PUBLIC_API_URL;
 
 // Create axios instance with base URL
 const api = axios.create({

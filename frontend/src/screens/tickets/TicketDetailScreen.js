@@ -24,27 +24,34 @@ const PRIORITY_STYLES = {
   high:   { backgroundColor: "#fce8e6", color: "#c62828" },
 };
 
-// Handles all Cloudinary URL cases:
-// /raw/upload/  → PDF button
-// /image/upload/...pdf → PDF button (old broken ticket before fix)
-// /image/upload/...png → inline image
-// /image/upload/no-ext → inline image
+// --- Cloudinary URL helpers ---
+// PDFs are uploaded with resource_type "raw" → URL contains /raw/upload/
+// Images are uploaded with default type     → URL contains /image/upload/
+// This matches the team standard from M2 - Saifullah
+
+// Returns true only for images (not PDFs)
 const isImageUrl = (url) => {
-  if (!url) return false;
-  if (url.includes("/image/upload/")) {
-    const filename = url.split("/").pop().toLowerCase();
-    if (filename.endsWith(".pdf")) return false;
-    return true;
+  console.log("[isImageUrl] Checking URL:", url);
+  if (!url) {
+    console.log("[isImageUrl] No URL — returning false");
+    return false;
   }
-  return false;
+  const result = url.includes("/image/upload/");
+  console.log("[isImageUrl] Contains /image/upload/:", result);
+  return result;
 };
 
-const getPdfDownloadUrl = (url) => {
+// Wraps a PDF URL in Google Drive viewer so it renders properly on iOS and Android
+// Direct Linking.openURL does NOT work for PDFs on mobile — use this instead
+// Team standard from M2 - Saifullah
+const getPdfViewUrl = (url) => {
+  console.log("[getPdfViewUrl] Raw PDF URL:", url);
   if (!url) return url;
-  if (url.includes("/raw/upload/")) {
-    return url.replace("/raw/upload/", "/raw/upload/fl_attachment/");
-  }
-  return url;
+  const viewerUrl =
+    "https://drive.google.com/viewerng/viewer?embedded=true&url=" +
+    encodeURIComponent(url);
+  console.log("[getPdfViewUrl] Google Drive viewer URL:", viewerUrl);
+  return viewerUrl;
 };
 
 const TicketDetailScreen = ({ route, navigation }) => {
@@ -272,9 +279,9 @@ const TicketDetailScreen = ({ route, navigation }) => {
                 style={styles.pdfBtn}
                 onPress={() => {
                   // DEBUG_START
-                  console.log("[TicketDetail] Opening PDF URL:", getPdfDownloadUrl(ticket.attachmentUrl));
+                  console.log("[TicketDetail] Opening PDF URL:", getPdfViewUrl(ticket.attachmentUrl));
                   // DEBUG_END
-                  Linking.openURL(getPdfDownloadUrl(ticket.attachmentUrl));
+                  Linking.openURL(getPdfViewUrl(ticket.attachmentUrl));
                 }}
               >
                 <Text style={styles.pdfBtnIcon}>📄</Text>

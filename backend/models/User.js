@@ -37,6 +37,16 @@ const userSchema = new mongoose.Schema(
       type: String,
       trim: true,
     },
+    academicYear: {
+      type: Number,
+      enum: [1, 2, 3, 4],
+      default: null,
+    },
+    academicSemester: {
+      type: Number,
+      enum: [1, 2],
+      default: null,
+    },
   },
   {
     timestamps: true,

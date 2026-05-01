@@ -8,6 +8,17 @@ import LoginScreen from "../screens/LoginScreen";
 import RegisterScreen from "../screens/RegisterScreen";
 import DashboardScreen from "../screens/DashboardScreen";
 
+// Course screens
+import CourseListScreen from "../screens/courses/CourseListScreen";
+import CourseDetailScreen from "../screens/courses/CourseDetailScreen";
+import CreateCourseScreen from "../screens/courses/CreateCourseScreen";
+import EditCourseScreen from "../screens/courses/EditCourseScreen";
+import MyCoursesScreen from "../screens/courses/MyCoursesScreen";
+
+// Enrollment screens
+import MyEnrollmentsScreen from "../screens/enrollments/MyEnrollmentsScreen";
+import ManageEnrollmentsScreen from "../screens/enrollments/ManageEnrollmentsScreen";
+
 const Stack = createNativeStackNavigator();
 
 const AppNavigator = () => {
@@ -49,9 +60,49 @@ const AppNavigator = () => {
           headerShown: false,
         }}
       >
+        {/* Auth screens */}
         <Stack.Screen name="Login" component={LoginScreen} />
         <Stack.Screen name="Register" component={RegisterScreen} />
         <Stack.Screen name="Dashboard" component={DashboardScreen} />
+
+        {/* Course screens */}
+        <Stack.Screen
+          name="CourseList"
+          component={CourseListScreen}
+          options={{ headerShown: true, title: "All Courses" }}
+        />
+        <Stack.Screen
+          name="CourseDetail"
+          component={CourseDetailScreen}
+          options={{ headerShown: true, title: "Course Details" }}
+        />
+        <Stack.Screen
+          name="CreateCourse"
+          component={CreateCourseScreen}
+          options={{ headerShown: true, title: "Create Course" }}
+        />
+        <Stack.Screen
+          name="EditCourse"
+          component={EditCourseScreen}
+          options={{ headerShown: true, title: "Edit Course" }}
+        />
+        <Stack.Screen
+          name="MyCourses"
+          component={MyCoursesScreen}
+          options={{ headerShown: true, title: "My Courses" }}
+        />
+
+        {/* Enrollment screens */}
+        <Stack.Screen
+          name="MyEnrollments"
+          component={MyEnrollmentsScreen}
+          options={{ headerShown: true, title: "My Enrollments" }}
+        />
+        <Stack.Screen
+          name="ManageEnrollments"
+          component={ManageEnrollmentsScreen}
+          options={{ headerShown: true, title: "Manage Enrollments" }}
+        />
       </Stack.Navigator>
     </NavigationContainer>
   );

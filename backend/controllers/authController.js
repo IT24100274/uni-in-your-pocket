@@ -14,7 +14,7 @@ const generateToken = (id, role) => {
 // @access  Public
 const registerUser = async (req, res) => {
   try {
-    const { name, email, password, studentId, department } = req.body;
+    const { name, email, password, studentId, department, academicYear, academicSemester } = req.body;
 
     // Validate required fields
     if (!name || !email || !password) {
@@ -51,6 +51,8 @@ const registerUser = async (req, res) => {
       status: "pending",
       studentId,
       department,
+      academicYear,
+      academicSemester,
     });
 
     res.status(201).json({

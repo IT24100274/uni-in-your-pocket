@@ -1,6 +1,7 @@
 const express = require("express");
 const router = express.Router();
 const { protect, authorize } = require("../middleware/authMiddleware");
+const { upload } = require("../config/cloudinary");
 const {
   createTicket,
   getMyTickets,
@@ -13,7 +14,8 @@ const {
   deleteTicket,
 } = require("../controllers/ticketController");
 
-router.post("/", protect, authorize("student", "student_representative"), createTicket);
+// upload.single("attachment") handles the optional file — field name must be "attachment"
+router.post("/", protect, authorize("student", "student_representative"), upload.single("attachment"), createTicket);
 router.get("/my", protect, authorize("student", "student_representative"), getMyTickets);
 router.get("/all", protect, authorize("admin", "student_representative"), getAllTickets);
 router.get("/forwarded", protect, authorize("lecturer", "admin"), getForwardedTickets);

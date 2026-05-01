@@ -12,6 +12,7 @@ const {
   bulkApprove,
   bulkDeny,
   getEnrolledStudents,
+  unenrollCourse,
 } = require("../controllers/enrollmentController");
 
 const { protect, authorize } = require("../middleware/authMiddleware");
@@ -82,6 +83,14 @@ router.patch(
   protect,
   authorize("admin"),
   overrideEnrollment
+);
+
+// DELETE /api/enrollments/:id/unenroll → student cancels their enrollment
+router.delete(
+  "/:id/unenroll",
+  protect,
+  authorize("student"),
+  unenrollCourse
 );
 
 module.exports = router;

@@ -63,6 +63,11 @@ const RegisterScreen = ({ navigation }) => {
       return;
     }
 
+    if (!academicYear || !academicSemester) {
+      Alert.alert("Error", "Please enter your Academic Year and Semester");
+      return;
+    }
+
     setLoading(true);
 
     try {
@@ -170,7 +175,7 @@ const RegisterScreen = ({ navigation }) => {
             onChangeText={setDepartment}
           />
 
-          <Text style={styles.label}>Academic Year</Text>
+          <Text style={styles.label}>Academic Year *</Text>
           <TextInput
             style={styles.input}
             placeholder="1, 2, 3 or 4"
@@ -180,7 +185,7 @@ const RegisterScreen = ({ navigation }) => {
             maxLength={1}
           />
 
-          <Text style={styles.label}>Academic Semester</Text>
+          <Text style={styles.label}>Academic Semester *</Text>
           <TextInput
             style={styles.input}
             placeholder="1 or 2"

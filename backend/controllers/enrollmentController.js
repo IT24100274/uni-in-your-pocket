@@ -40,6 +40,16 @@ const requestEnrollment = async (req, res) => {
     // Build the semester string example: "Y2S1"
     const semester = `Y${student.academicYear}S${student.academicSemester}`;
 
+    // Check if the student's academic year and semester match the course
+    if (
+      student.academicYear !== course.academicYear ||
+      student.academicSemester !== course.academicSemester
+    ) {
+      return res.status(400).json({
+        message: `You can only enroll in courses for your current academic year and semester (Y${student.academicYear}S${student.academicSemester})`,
+      });
+    }
+
     // ---- ELIGIBILITY CHECK ----
     // If the student is Year 1 Semester 1, they are auto eligible
     // because they have not done any exams yet
@@ -336,6 +346,39 @@ const getEnrolledStudents = async (req, res) => {
   }
 };
 
+// =============================================
+// UNENROLL — student cancels their own enrollment
+// Who can use: student only
+// Works for both pending and approved enrollments
+// =============================================
+const unenrollCourse = async (req, res) => {
+  try {
+    const enrollment = await Enrollment.findById(req.params.id);
+
+    if (!enrollment) {
+      return res.status(404).json({ message: "Enrollment not found" });
+    }
+
+    if (enrollment.student.toString() !== req.user.id) {
+      return res
+        .status(403)
+        .json({ message: "You can only cancel your own enrollments" });
+    }
+
+    if (enrollment.status !== "approved" && enrollment.status !== "pending") {
+      return res
+        .status(400)
+        .json({ message: "Only approved or pending enrollments can be cancelled" });
+    }
+
+    await Enrollment.findByIdAndDelete(req.params.id);
+
+    res.status(200).json({ message: "Enrollment cancelled successfully" });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
 // Export all functions
 module.exports = {
   requestEnrollment,
@@ -348,4 +391,5 @@ module.exports = {
   bulkApprove,
   bulkDeny,
   getEnrolledStudents,
+  unenrollCourse,
 };

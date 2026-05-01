@@ -69,6 +69,13 @@ const HomeScreen = () => {
           </View>
         )}
 
+        {user?.role === "student" && user?.academicYear && user?.academicSemester && (
+          <View style={styles.infoRow}>
+            <Text style={styles.infoLabel}>Academic Progress</Text>
+            <Text style={styles.infoValue}>Year {user.academicYear} - Semester {user.academicSemester}</Text>
+          </View>
+        )}
+
         <View style={styles.infoRow}>
           <Text style={styles.infoLabel}>Account Status</Text>
           <Text style={[styles.infoValue, styles.statusApproved]}>

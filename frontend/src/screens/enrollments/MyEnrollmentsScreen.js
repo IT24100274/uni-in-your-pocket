@@ -6,6 +6,7 @@ import {
   StyleSheet,
   ActivityIndicator,
   TouchableOpacity,
+  Alert,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import api from "../../services/api";
@@ -25,6 +26,32 @@ const MyEnrollmentsScreen = ({ navigation }) => {
     });
     return unsubscribe;
   }, [navigation]);
+
+  const handleUnenroll = (item) => {
+    Alert.alert(
+      "Unenroll",
+      "Are you sure you want to unenroll from this course?",
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Unenroll",
+          style: "destructive",
+          onPress: async () => {
+            try {
+              await api.delete(`/enrollments/${item._id}/unenroll`);
+              Alert.alert("Success", "Unenrolled successfully");
+              fetchMyEnrollments();
+            } catch (error) {
+              Alert.alert(
+                "Error",
+                error.response?.data?.message || "Failed to unenroll"
+              );
+            }
+          },
+        },
+      ]
+    );
+  };
 
   const fetchMyEnrollments = async () => {
     try {
@@ -122,6 +149,16 @@ const MyEnrollmentsScreen = ({ navigation }) => {
             >
               <Text style={styles.viewBtnText}>View Course</Text>
             </TouchableOpacity>
+
+            {/* Unenroll button — only for approved or pending */}
+            {(item.status === "approved" || item.status === "pending") && (
+              <TouchableOpacity
+                style={styles.unenrollBtn}
+                onPress={() => handleUnenroll(item)}
+              >
+                <Text style={styles.unenrollBtnText}>Unenroll</Text>
+              </TouchableOpacity>
+            )}
           </View>
         )}
         ListEmptyComponent={
@@ -254,6 +291,18 @@ const styles = StyleSheet.create({
   },
   viewBtnText: {
     color: "#333",
+    fontWeight: "bold",
+    fontSize: 13,
+  },
+  unenrollBtn: {
+    backgroundColor: "#c62828",
+    padding: "3%",
+    borderRadius: 7,
+    alignItems: "center",
+    marginTop: "2%",
+  },
+  unenrollBtnText: {
+    color: "#fff",
     fontWeight: "bold",
     fontSize: 13,
   },

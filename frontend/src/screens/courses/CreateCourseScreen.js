@@ -8,7 +8,10 @@ import {
   ScrollView,
   Alert,
   ActivityIndicator,
+  KeyboardAvoidingView,
+  Platform,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import * as DocumentPicker from "expo-document-picker";
 import * as ImagePicker from "expo-image-picker";
 import api from "../../services/api";
@@ -26,13 +29,11 @@ const CreateCourseScreen = ({ navigation }) => {
   const [bannerFile, setBannerFile] = useState(null);
   const [loading, setLoading] = useState(false);
 
-  // Let lecturer pick a PDF for syllabus
   const pickSyllabus = async () => {
     try {
       const result = await DocumentPicker.getDocumentAsync({
         type: "application/pdf",
       });
-      // If user picked a file (did not cancel)
       if (!result.canceled) {
         setSyllabusFile(result.assets[0]);
         Alert.alert("Success", "Syllabus PDF selected: " + result.assets[0].name);
@@ -42,14 +43,12 @@ const CreateCourseScreen = ({ navigation }) => {
     }
   };
 
-  // Let lecturer pick an image for banner
   const pickBanner = async () => {
     try {
       const result = await ImagePicker.launchImageLibraryAsync({
         mediaTypes: ImagePicker.MediaTypeOptions.Images,
         quality: 0.7,
       });
-      // If user picked an image (did not cancel)
       if (!result.canceled) {
         setBannerFile(result.assets[0]);
         Alert.alert("Success", "Banner image selected");
@@ -60,7 +59,6 @@ const CreateCourseScreen = ({ navigation }) => {
   };
 
   const handleCreateCourse = async () => {
-    // Basic validation
     if (
       !courseCode ||
       !title ||
@@ -77,7 +75,6 @@ const CreateCourseScreen = ({ navigation }) => {
     try {
       setLoading(true);
 
-      // We use FormData because we are sending files + text together
       const formData = new FormData();
       formData.append("courseCode", courseCode);
       formData.append("title", title);
@@ -88,7 +85,6 @@ const CreateCourseScreen = ({ navigation }) => {
       formData.append("department", department);
       formData.append("eligibilityNote", eligibilityNote || "No prerequisites");
 
-      // Attach syllabus PDF if selected
       if (syllabusFile) {
         formData.append("syllabus", {
           uri: syllabusFile.uri,
@@ -97,7 +93,6 @@ const CreateCourseScreen = ({ navigation }) => {
         });
       }
 
-      // Attach banner image if selected
       if (bannerFile) {
         formData.append("banner", {
           uri: bannerFile.uri,
@@ -106,7 +101,6 @@ const CreateCourseScreen = ({ navigation }) => {
         });
       }
 
-      // Send with multipart/form-data header for file upload
       await api.post("/courses", formData, {
         headers: { "Content-Type": "multipart/form-data" },
       });
@@ -124,99 +118,113 @@ const CreateCourseScreen = ({ navigation }) => {
   };
 
   return (
-    <ScrollView style={styles.container}>
-      <Text style={styles.sectionTitle}>Course Information</Text>
-
-      <TextInput
-        style={styles.input}
-        placeholder="Course Code (e.g. CS201)"
-        value={courseCode}
-        onChangeText={setCourseCode}
-      />
-      <TextInput
-        style={styles.input}
-        placeholder="Course Title"
-        value={title}
-        onChangeText={setTitle}
-      />
-      <TextInput
-        style={[styles.input, styles.textArea]}
-        placeholder="Description"
-        value={description}
-        onChangeText={setDescription}
-        multiline
-        numberOfLines={3}
-      />
-      <TextInput
-        style={styles.input}
-        placeholder="Credits (e.g. 3)"
-        value={credits}
-        onChangeText={setCredits}
-        keyboardType="numeric"
-      />
-      <TextInput
-        style={styles.input}
-        placeholder="Academic Year (1, 2, 3 or 4)"
-        value={academicYear}
-        onChangeText={setAcademicYear}
-        keyboardType="numeric"
-      />
-      <TextInput
-        style={styles.input}
-        placeholder="Academic Semester (1 or 2)"
-        value={academicSemester}
-        onChangeText={setAcademicSemester}
-        keyboardType="numeric"
-      />
-      <TextInput
-        style={styles.input}
-        placeholder="Department"
-        value={department}
-        onChangeText={setDepartment}
-      />
-      <TextInput
-        style={styles.input}
-        placeholder="Eligibility Note (e.g. Must pass CS101 with 50%)"
-        value={eligibilityNote}
-        onChangeText={setEligibilityNote}
-      />
-
-      {/* File upload section */}
-      <Text style={styles.sectionTitle}>File Uploads</Text>
-
-      <TouchableOpacity style={styles.uploadBtn} onPress={pickSyllabus}>
-        <Text style={styles.uploadBtnText}>
-          {syllabusFile ? "Syllabus Selected" : "Upload Syllabus PDF"}
-        </Text>
-      </TouchableOpacity>
-
-      <TouchableOpacity style={styles.uploadBtn} onPress={pickBanner}>
-        <Text style={styles.uploadBtnText}>
-          {bannerFile ? "Banner Selected" : "Upload Banner Image"}
-        </Text>
-      </TouchableOpacity>
-
-      {/* Submit button */}
-      <TouchableOpacity
-        style={styles.submitBtn}
-        onPress={handleCreateCourse}
-        disabled={loading}
+    <SafeAreaView style={styles.safeArea}>
+      <KeyboardAvoidingView
+        style={styles.keyboardView}
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
       >
-        {loading ? (
-          <ActivityIndicator color="#fff" />
-        ) : (
-          <Text style={styles.submitBtnText}>Create Course</Text>
-        )}
-      </TouchableOpacity>
-    </ScrollView>
+        <ScrollView
+          contentContainerStyle={styles.scrollContent}
+          showsVerticalScrollIndicator={false}
+        >
+          <Text style={styles.sectionTitle}>Course Information</Text>
+
+          <TextInput
+            style={styles.input}
+            placeholder="Course Code (e.g. CS201)"
+            value={courseCode}
+            onChangeText={setCourseCode}
+          />
+          <TextInput
+            style={styles.input}
+            placeholder="Course Title"
+            value={title}
+            onChangeText={setTitle}
+          />
+          <TextInput
+            style={[styles.input, styles.textArea]}
+            placeholder="Description"
+            value={description}
+            onChangeText={setDescription}
+            multiline
+            numberOfLines={3}
+          />
+          <TextInput
+            style={styles.input}
+            placeholder="Credits (e.g. 3)"
+            value={credits}
+            onChangeText={setCredits}
+            keyboardType="numeric"
+          />
+          <TextInput
+            style={styles.input}
+            placeholder="Academic Year (1, 2, 3 or 4)"
+            value={academicYear}
+            onChangeText={setAcademicYear}
+            keyboardType="numeric"
+          />
+          <TextInput
+            style={styles.input}
+            placeholder="Academic Semester (1 or 2)"
+            value={academicSemester}
+            onChangeText={setAcademicSemester}
+            keyboardType="numeric"
+          />
+          <TextInput
+            style={styles.input}
+            placeholder="Department"
+            value={department}
+            onChangeText={setDepartment}
+          />
+          <TextInput
+            style={styles.input}
+            placeholder="Eligibility Note (e.g. Must pass CS101 with 50%)"
+            value={eligibilityNote}
+            onChangeText={setEligibilityNote}
+          />
+
+          <Text style={styles.sectionTitle}>File Uploads</Text>
+
+          <TouchableOpacity style={styles.uploadBtn} onPress={pickSyllabus}>
+            <Text style={styles.uploadBtnText}>
+              {syllabusFile ? "✓ Syllabus Selected" : "Upload Syllabus PDF"}
+            </Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity style={styles.uploadBtn} onPress={pickBanner}>
+            <Text style={styles.uploadBtnText}>
+              {bannerFile ? "✓ Banner Selected" : "Upload Banner Image"}
+            </Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            style={styles.submitBtn}
+            onPress={handleCreateCourse}
+            disabled={loading}
+          >
+            {loading ? (
+              <ActivityIndicator color="#fff" />
+            ) : (
+              <Text style={styles.submitBtnText}>Create Course</Text>
+            )}
+          </TouchableOpacity>
+        </ScrollView>
+      </KeyboardAvoidingView>
+    </SafeAreaView>
   );
 };
 
 const styles = StyleSheet.create({
-  container: {
+  safeArea: {
     flex: 1,
     backgroundColor: "#f5f5f5",
+  },
+  keyboardView: {
+    flex: 1,
+  },
+  scrollContent: {
     padding: "4%",
+    paddingBottom: 40,
   },
   sectionTitle: {
     fontSize: 13,
@@ -260,7 +268,7 @@ const styles = StyleSheet.create({
     padding: "4%",
     alignItems: "center",
     marginTop: "3%",
-    marginBottom: "10%",
+    marginBottom: "5%",
   },
   submitBtnText: {
     color: "#fff",

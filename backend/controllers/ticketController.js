@@ -1,36 +1,99 @@
 const Ticket = require("../models/Ticket");
 const User = require("../models/User");
-const { uploadToCloudinary } = require("../config/cloudinary");
+const { cloudinary } = require("../config/cloudinary");
 
+// Returns "image" for image files, "raw" for everything else
+const getResourceType = (mimetype) => {
+  if (mimetype && mimetype.startsWith("image/")) return "image";
+  return "raw";
+};
+
+// Uploads file to Cloudinary with correct resource_type and unique filename
+const uploadAttachment = (fileBuffer, folder, mimetype, originalname) => {
+  return new Promise((resolve, reject) => {
+    const ext = originalname ? originalname.split(".").pop().toLowerCase() : "";
+    const baseName = originalname
+      ? decodeURIComponent(originalname).replace(/\.[^/.]+$/, "").replace(/[^a-zA-Z0-9]/g, "_")
+      : "attachment";
+    // Timestamp makes every upload unique — prevents Cloudinary returning old cached file
+    const timestamp = Date.now();
+    const publicId = `${folder}/${baseName}_${timestamp}${ext ? "." + ext : ""}`;
+
+    const stream = cloudinary.uploader.upload_stream(
+      {
+        resource_type: getResourceType(mimetype),
+        public_id: publicId,
+        overwrite: false,
+      },
+      (error, result) => {
+        if (error) reject(error);
+        else resolve(result);
+      }
+    );
+    stream.end(fileBuffer);
+  });
+};
+
+// @desc    Create a new ticket
+// @route   POST /api/tickets
+// @access  Private (student, student_representative)
 const createTicket = async (req, res) => {
   try {
     const { title, description, category, priority, raisedFor } = req.body;
+
     if (!title || !description || !category) {
       return res.status(400).json({ message: "Please provide title, description and category" });
     }
+
     if (raisedFor) {
       const targetStudent = await User.findById(raisedFor);
       if (!targetStudent) return res.status(404).json({ message: "Student not found" });
       if (targetStudent.role !== "student") return res.status(400).json({ message: "Can only raise a ticket on behalf of a student" });
     }
+
     let attachmentUrl = null;
     if (req.file) {
-      const result = await uploadToCloudinary(req.file.buffer, "uni-pocket/tickets/attachments");
+      // DEBUG_START
+      console.log("[createTicket] FILE mimetype:", req.file.mimetype);
+      console.log("[createTicket] FILE originalname:", req.file.originalname);
+      console.log("[createTicket] FILE size:", req.file.size);
+      // DEBUG_END
+      const result = await uploadAttachment(
+        req.file.buffer,
+        "uni-pocket/tickets/attachments",
+        req.file.mimetype,
+        req.file.originalname
+      );
+      // DEBUG_START
+      console.log("[createTicket] CLOUDINARY resource_type:", result.resource_type);
+      console.log("[createTicket] CLOUDINARY bytes:", result.bytes);
+      console.log("[createTicket] CLOUDINARY url:", result.secure_url);
+      // DEBUG_END
       attachmentUrl = result.secure_url;
     }
+
     const ticket = await Ticket.create({
-      title, description, category,
+      title,
+      description,
+      category,
       priority: priority || "medium",
       raisedBy: req.user._id,
       raisedFor: raisedFor || null,
       attachmentUrl,
     });
+
     res.status(201).json({ message: "Ticket raised successfully", ticket });
   } catch (error) {
+    // DEBUG_START
+    console.log("[createTicket] ERROR:", error.message);
+    // DEBUG_END
     res.status(500).json({ message: "Server error", error: error.message });
   }
 };
 
+// @desc    Get all tickets raised by the logged-in user
+// @route   GET /api/tickets/my
+// @access  Private (student, student_representative)
 const getMyTickets = async (req, res) => {
   try {
     const tickets = await Ticket.find({ raisedBy: req.user._id })
@@ -44,6 +107,9 @@ const getMyTickets = async (req, res) => {
   }
 };
 
+// @desc    Get all tickets in the system
+// @route   GET /api/tickets/all
+// @access  Private (admin, student_representative)
 const getAllTickets = async (req, res) => {
   try {
     const tickets = await Ticket.find()
@@ -58,6 +124,9 @@ const getAllTickets = async (req, res) => {
   }
 };
 
+// @desc    Get tickets forwarded to the logged-in user
+// @route   GET /api/tickets/forwarded
+// @access  Private (lecturer, admin)
 const getForwardedTickets = async (req, res) => {
   try {
     const tickets = await Ticket.find({ forwardedTo: req.user._id })
@@ -71,6 +140,9 @@ const getForwardedTickets = async (req, res) => {
   }
 };
 
+// @desc    Get a single ticket by ID
+// @route   GET /api/tickets/:id
+// @access  Private (own ticket, or admin/rep/lecturer)
 const getTicketById = async (req, res) => {
   try {
     const ticket = await Ticket.findById(req.params.id)
@@ -88,6 +160,9 @@ const getTicketById = async (req, res) => {
   }
 };
 
+// @desc    Respond to a ticket and update its status
+// @route   PUT /api/tickets/:id/respond
+// @access  Private (admin, student_representative, lecturer)
 const respondToTicket = async (req, res) => {
   try {
     const { response, status } = req.body;
@@ -111,6 +186,9 @@ const respondToTicket = async (req, res) => {
   }
 };
 
+// @desc    Forward a ticket to a lecturer or admin
+// @route   PUT /api/tickets/:id/forward
+// @access  Private (student_representative)
 const forwardTicket = async (req, res) => {
   try {
     const { forwardedTo } = req.body;
@@ -134,6 +212,9 @@ const forwardTicket = async (req, res) => {
   }
 };
 
+// @desc    Close a ticket
+// @route   PUT /api/tickets/:id/close
+// @access  Private (all roles)
 const closeTicket = async (req, res) => {
   try {
     const ticket = await Ticket.findById(req.params.id);
@@ -150,6 +231,9 @@ const closeTicket = async (req, res) => {
   }
 };
 
+// @desc    Delete a ticket
+// @route   DELETE /api/tickets/:id
+// @access  Private (admin only)
 const deleteTicket = async (req, res) => {
   try {
     const ticket = await Ticket.findById(req.params.id);
@@ -161,7 +245,9 @@ const deleteTicket = async (req, res) => {
   }
 };
 
-// Returns all students — used by rep in RaiseTicketScreen dropdown
+// @desc    Get all students (for rep raising on behalf of)
+// @route   GET /api/tickets/students
+// @access  Private (student_representative)
 const getStudentsList = async (req, res) => {
   try {
     const students = await User.find({ role: "student", status: "approved" }).select("name email studentId");
@@ -171,7 +257,9 @@ const getStudentsList = async (req, res) => {
   }
 };
 
-// Returns all lecturers and admins — used by rep in forward picker
+// @desc    Get all lecturers and admins (for rep forwarding)
+// @route   GET /api/tickets/staff
+// @access  Private (student_representative)
 const getStaffList = async (req, res) => {
   try {
     const staff = await User.find({ role: { $in: ["lecturer", "admin"] }, status: "approved" }).select("name email role department");

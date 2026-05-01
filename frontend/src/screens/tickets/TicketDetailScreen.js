@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import {
   View, Text, StyleSheet, ScrollView, ActivityIndicator,
-  TouchableOpacity, Alert, TextInput, Linking,
+  TouchableOpacity, Alert, TextInput, Linking, Image,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import AsyncStorage from "@react-native-async-storage/async-storage";
@@ -24,6 +24,29 @@ const PRIORITY_STYLES = {
   high:   { backgroundColor: "#fce8e6", color: "#c62828" },
 };
 
+// Handles all Cloudinary URL cases:
+// /raw/upload/  → PDF button
+// /image/upload/...pdf → PDF button (old broken ticket before fix)
+// /image/upload/...png → inline image
+// /image/upload/no-ext → inline image
+const isImageUrl = (url) => {
+  if (!url) return false;
+  if (url.includes("/image/upload/")) {
+    const filename = url.split("/").pop().toLowerCase();
+    if (filename.endsWith(".pdf")) return false;
+    return true;
+  }
+  return false;
+};
+
+const getPdfDownloadUrl = (url) => {
+  if (!url) return url;
+  if (url.includes("/raw/upload/")) {
+    return url.replace("/raw/upload/", "/raw/upload/fl_attachment/");
+  }
+  return url;
+};
+
 const TicketDetailScreen = ({ route, navigation }) => {
   const { ticketId } = route.params;
   const [ticket, setTicket] = useState(null);
@@ -31,24 +54,23 @@ const TicketDetailScreen = ({ route, navigation }) => {
   const [userRole, setUserRole] = useState("");
   const [userId, setUserId] = useState("");
 
-  // Respond form state
   const [responseText, setResponseText] = useState("");
   const [responseStatus, setResponseStatus] = useState("in_progress");
   const [submittingResponse, setSubmittingResponse] = useState(false);
 
-  // Forward form state
   const [staffList, setStaffList] = useState([]);
   const [selectedStaff, setSelectedStaff] = useState(null);
   const [showStaffPicker, setShowStaffPicker] = useState(false);
   const [submittingForward, setSubmittingForward] = useState(false);
 
-  useEffect(() => {
-    loadUserAndTicket();
-  }, []);
+  useEffect(() => { loadUserAndTicket(); }, []);
 
   const loadUserAndTicket = async () => {
     const userData = await AsyncStorage.getItem("user");
     const user = JSON.parse(userData);
+    // DEBUG_START
+    console.log("[TicketDetail] Logged in as:", user.name, "| role:", user.role);
+    // DEBUG_END
     setUserRole(user.role);
     setUserId(user._id);
     fetchTicket();
@@ -57,10 +79,21 @@ const TicketDetailScreen = ({ route, navigation }) => {
 
   const fetchTicket = async () => {
     try {
+      // DEBUG_START
+      console.log("[TicketDetail] Fetching ticket ID:", ticketId);
+      // DEBUG_END
       const res = await getTicketById(ticketId);
       setTicket(res.data);
+      // DEBUG_START
+      console.log("[TicketDetail] Ticket loaded:", res.data.title, "| status:", res.data.status);
+      console.log("[TicketDetail] attachmentUrl:", res.data.attachmentUrl);
+      console.log("[TicketDetail] isImageUrl result:", isImageUrl(res.data.attachmentUrl));
+      // DEBUG_END
       if (res.data.response) setResponseText(res.data.response);
     } catch (error) {
+      // DEBUG_START
+      console.log("[TicketDetail] ERROR fetching ticket:", error.response?.data?.message || error.message);
+      // DEBUG_END
       Alert.alert("Error", error.response?.data?.message || "Could not load ticket");
     } finally {
       setLoading(false);
@@ -71,8 +104,13 @@ const TicketDetailScreen = ({ route, navigation }) => {
     try {
       const res = await getStaffList();
       setStaffList(res.data);
+      // DEBUG_START
+      console.log("[TicketDetail] Staff list loaded:", res.data.length, "members");
+      // DEBUG_END
     } catch (error) {
-      console.log("Could not load staff list");
+      // DEBUG_START
+      console.log("[TicketDetail] ERROR fetching staff:", error.message);
+      // DEBUG_END
     }
   };
 
@@ -80,10 +118,16 @@ const TicketDetailScreen = ({ route, navigation }) => {
     if (!responseText.trim()) return Alert.alert("Missing field", "Please enter a response");
     try {
       setSubmittingResponse(true);
+      // DEBUG_START
+      console.log("[TicketDetail] Submitting response:", responseText.trim(), "| status:", responseStatus);
+      // DEBUG_END
       await respondToTicket(ticketId, { response: responseText.trim(), status: responseStatus });
       Alert.alert("Success", "Response submitted");
       fetchTicket();
     } catch (error) {
+      // DEBUG_START
+      console.log("[TicketDetail] ERROR responding:", error.response?.data?.message || error.message);
+      // DEBUG_END
       Alert.alert("Error", error.response?.data?.message || "Failed to submit response");
     } finally {
       setSubmittingResponse(false);
@@ -94,10 +138,17 @@ const TicketDetailScreen = ({ route, navigation }) => {
     if (!selectedStaff) return Alert.alert("Missing field", "Please select who to forward to");
     try {
       setSubmittingForward(true);
+      // DEBUG_START
+      console.log("[TicketDetail] Forwarding to:", selectedStaff.name, "| role:", selectedStaff.role);
+      // DEBUG_END
       const res = await forwardTicket(ticketId, { forwardedTo: selectedStaff._id });
       Alert.alert("Success", res.data.message);
+      setShowStaffPicker(false);
       fetchTicket();
     } catch (error) {
+      // DEBUG_START
+      console.log("[TicketDetail] ERROR forwarding:", error.response?.data?.message || error.message);
+      // DEBUG_END
       Alert.alert("Error", error.response?.data?.message || "Failed to forward ticket");
     } finally {
       setSubmittingForward(false);
@@ -110,10 +161,17 @@ const TicketDetailScreen = ({ route, navigation }) => {
       {
         text: "Close", style: "destructive", onPress: async () => {
           try {
+            // DEBUG_START
+            console.log("[TicketDetail] Closing ticket:", ticketId);
+            // DEBUG_END
             await closeTicket(ticketId);
-            Alert.alert("Closed", "Ticket has been closed");
-            fetchTicket();
+            Alert.alert("Closed", "Ticket has been closed", [
+              { text: "OK", onPress: () => navigation.goBack() },
+            ]);
           } catch (error) {
+            // DEBUG_START
+            console.log("[TicketDetail] ERROR closing:", error.response?.data?.message || error.message);
+            // DEBUG_END
             Alert.alert("Error", error.response?.data?.message || "Failed to close ticket");
           }
         },
@@ -127,11 +185,17 @@ const TicketDetailScreen = ({ route, navigation }) => {
       {
         text: "Delete", style: "destructive", onPress: async () => {
           try {
+            // DEBUG_START
+            console.log("[TicketDetail] Deleting ticket:", ticketId);
+            // DEBUG_END
             await deleteTicket(ticketId);
             Alert.alert("Deleted", "Ticket has been deleted", [
               { text: "OK", onPress: () => navigation.goBack() },
             ]);
           } catch (error) {
+            // DEBUG_START
+            console.log("[TicketDetail] ERROR deleting:", error.response?.data?.message || error.message);
+            // DEBUG_END
             Alert.alert("Error", error.response?.data?.message || "Failed to delete ticket");
           }
         },
@@ -145,12 +209,19 @@ const TicketDetailScreen = ({ route, navigation }) => {
     return <View style={styles.centered}><ActivityIndicator size="large" color="#1a73e8" /></View>;
   }
   if (!ticket) {
-    return <View style={styles.centered}><Text>Ticket not found</Text></View>;
+    return (
+      <View style={styles.centered}>
+        <Text style={{ color: "#555" }}>Ticket not found</Text>
+        <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()}>
+          <Text style={styles.backBtnText}>Go Back</Text>
+        </TouchableOpacity>
+      </View>
+    );
   }
 
   return (
     <SafeAreaView style={styles.container}>
-      <ScrollView showsVerticalScrollIndicator={false}>
+      <ScrollView showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
 
         {/* Title + badges */}
         <View style={styles.card}>
@@ -184,12 +255,34 @@ const TicketDetailScreen = ({ route, navigation }) => {
           {ticket.forwardedTo && (
             <Text style={styles.meta}>Forwarded to: <Text style={[styles.metaVal, { color: "#e65100" }]}>{ticket.forwardedTo.name} ({ticket.forwardedTo.role})</Text></Text>
           )}
-          {ticket.attachmentUrl && (
-            <TouchableOpacity style={styles.attachmentBtn} onPress={() => Linking.openURL(ticket.attachmentUrl)}>
-              <Text style={styles.attachmentBtnText}>View Attachment</Text>
-            </TouchableOpacity>
-          )}
         </View>
+
+        {/* Attachment — image shown inline, PDF opens in browser */}
+        {ticket.attachmentUrl && (
+          <View style={styles.card}>
+            <Text style={styles.sectionTitle}>Attachment</Text>
+            {isImageUrl(ticket.attachmentUrl) ? (
+              <Image
+                source={{ uri: ticket.attachmentUrl }}
+                style={styles.inlineImage}
+                resizeMode="contain"
+              />
+            ) : (
+              <TouchableOpacity
+                style={styles.pdfBtn}
+                onPress={() => {
+                  // DEBUG_START
+                  console.log("[TicketDetail] Opening PDF URL:", getPdfDownloadUrl(ticket.attachmentUrl));
+                  // DEBUG_END
+                  Linking.openURL(getPdfDownloadUrl(ticket.attachmentUrl));
+                }}
+              >
+                <Text style={styles.pdfBtnIcon}>📄</Text>
+                <Text style={styles.pdfBtnText}>View PDF attachment</Text>
+              </TouchableOpacity>
+            )}
+          </View>
+        )}
 
         {/* Response card */}
         {ticket.response && (
@@ -214,7 +307,6 @@ const TicketDetailScreen = ({ route, navigation }) => {
               numberOfLines={4}
               textAlignVertical="top"
             />
-            
             <Text style={styles.label}>Set status</Text>
             <View style={styles.statusRow}>
               {["in_progress", "resolved"].map((s) => (
@@ -246,13 +338,22 @@ const TicketDetailScreen = ({ route, navigation }) => {
         {userRole === "student_representative" && ticket.status !== "closed" && (
           <View style={styles.card}>
             <Text style={styles.sectionTitle}>Forward Ticket</Text>
-            <TouchableOpacity style={styles.pickerBtn} onPress={() => setShowStaffPicker(!showStaffPicker)}>
-              <Text style={styles.pickerBtnText}>{selectedStaff ? `${selectedStaff.name} (${selectedStaff.role})` : "Select lecturer or admin"}</Text>
+            <TouchableOpacity
+              style={styles.pickerBtn}
+              onPress={() => setShowStaffPicker(!showStaffPicker)}
+            >
+              <Text style={styles.pickerBtnText}>
+                {selectedStaff ? `${selectedStaff.name} (${selectedStaff.role})` : "Select lecturer or admin"}
+              </Text>
             </TouchableOpacity>
             {showStaffPicker && (
               <View style={styles.dropdownList}>
                 {staffList.map((s) => (
-                  <TouchableOpacity key={s._id} style={styles.dropdownItem} onPress={() => { setSelectedStaff(s); setShowStaffPicker(false); }}>
+                  <TouchableOpacity
+                    key={s._id}
+                    style={styles.dropdownItem}
+                    onPress={() => { setSelectedStaff(s); setShowStaffPicker(false); }}
+                  >
                     <Text style={styles.dropdownItemText}>{s.name}</Text>
                     <Text style={styles.dropdownItemSub}>{s.role}{s.department ? ` · ${s.department}` : ""}</Text>
                   </TouchableOpacity>
@@ -295,6 +396,8 @@ const TicketDetailScreen = ({ route, navigation }) => {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: "#f5f5f5", padding: "4%" },
   centered: { flex: 1, justifyContent: "center", alignItems: "center" },
+  backBtn: { marginTop: 16, backgroundColor: "#1a73e8", paddingHorizontal: 24, paddingVertical: 10, borderRadius: 8 },
+  backBtnText: { color: "#fff", fontWeight: "bold" },
   card: { backgroundColor: "#fff", borderRadius: 10, padding: "4%", marginBottom: "3%", borderWidth: 1, borderColor: "#e0e0e0" },
   responseCard: { backgroundColor: "#f0f7ff", borderRadius: 10, padding: "4%", marginBottom: "3%", borderWidth: 1, borderColor: "#b3d1f7" },
   title: { fontSize: 17, fontWeight: "bold", color: "#333", marginBottom: 10 },
@@ -307,8 +410,10 @@ const styles = StyleSheet.create({
   description: { fontSize: 14, color: "#333", lineHeight: 22, marginBottom: 12 },
   meta: { fontSize: 13, color: "#888", marginBottom: 4 },
   metaVal: { color: "#333", fontWeight: "bold" },
-  attachmentBtn: { marginTop: 10, backgroundColor: "#e8f0fe", padding: 10, borderRadius: 7, alignItems: "center" },
-  attachmentBtnText: { color: "#1a73e8", fontWeight: "bold", fontSize: 13 },
+  inlineImage: { width: "100%", height: 220, borderRadius: 8, backgroundColor: "#f0f0f0" },
+  pdfBtn: { flexDirection: "row", alignItems: "center", backgroundColor: "#fce8e6", padding: 14, borderRadius: 8, gap: 10 },
+  pdfBtnIcon: { fontSize: 20 },
+  pdfBtnText: { color: "#c62828", fontWeight: "bold", fontSize: 13 },
   responseText: { fontSize: 14, color: "#333", lineHeight: 22, marginBottom: 10 },
   input: { backgroundColor: "#f9f9f9", borderWidth: 1, borderColor: "#e0e0e0", borderRadius: 8, padding: 12, fontSize: 14, color: "#333" },
   textArea: { height: 100, textAlignVertical: "top" },
@@ -320,7 +425,7 @@ const styles = StyleSheet.create({
   statusBtnTextActive: { color: "#fff", fontWeight: "bold" },
   pickerBtn: { backgroundColor: "#f9f9f9", borderWidth: 1, borderColor: "#e0e0e0", borderRadius: 8, padding: 12, marginBottom: 6 },
   pickerBtnText: { fontSize: 14, color: "#555" },
-  dropdownList: { backgroundColor: "#fff", borderWidth: 1, borderColor: "#e0e0e0", borderRadius: 8, marginBottom: 10, maxHeight: 180 },
+  dropdownList: { backgroundColor: "#fff", borderWidth: 1, borderColor: "#e0e0e0", borderRadius: 8, marginBottom: 10 },
   dropdownItem: { padding: 12, borderBottomWidth: 1, borderBottomColor: "#f0f0f0" },
   dropdownItemText: { fontSize: 14, color: "#333" },
   dropdownItemSub: { fontSize: 11, color: "#999", marginTop: 2, textTransform: "capitalize" },

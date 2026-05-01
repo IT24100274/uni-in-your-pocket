@@ -19,6 +19,13 @@ import MyCoursesScreen from "../screens/courses/MyCoursesScreen";
 import MyEnrollmentsScreen from "../screens/enrollments/MyEnrollmentsScreen";
 import ManageEnrollmentsScreen from "../screens/enrollments/ManageEnrollmentsScreen";
 
+// Mahdhi Ticket screens
+import TicketsScreen from "../screens/tickets/TicketsScreen";
+import RaiseTicketScreen from "../screens/tickets/RaiseTicketScreen";
+import TicketDetailScreen from "../screens/tickets/TicketDetailScreen";
+import ManageTicketsScreen from "../screens/tickets/ManageTicketsScreen";
+import ForwardedTicketsScreen from "../screens/tickets/ForwardedTicketsScreen";
+
 const Stack = createNativeStackNavigator();
 
 const AppNavigator = () => {
@@ -103,6 +110,11 @@ const AppNavigator = () => {
           component={ManageEnrollmentsScreen}
           options={{ headerShown: true, title: "Manage Enrollments" }}
         />
+
+        {/* Mahdhi Ticket screens */}
+        <Stack.Screen name="TicketDetail" component={TicketDetailScreen} options={{ headerShown: true, title: "Ticket Details" }} />
+        <Stack.Screen name="RaiseTicket" component={RaiseTicketScreen} options={{ headerShown: true, title: "Raise a Ticket" }} />
+
       </Stack.Navigator>
     </NavigationContainer>
   );

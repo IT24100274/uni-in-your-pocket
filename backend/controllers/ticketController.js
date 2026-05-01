@@ -1,5 +1,6 @@
 const Ticket = require("../models/Ticket");
 const User = require("../models/User");
+const { uploadToCloudinary } = require("../config/cloudinary");
 
 // @desc    Create a new ticket
 // @route   POST /api/tickets
@@ -22,6 +23,16 @@ const createTicket = async (req, res) => {
       }
     }
 
+    // Upload attachment to Cloudinary if one was provided
+    let attachmentUrl = null;
+    if (req.file) {
+      const result = await uploadToCloudinary(
+        req.file.buffer,
+        "uni-pocket/tickets/attachments"
+      );
+      attachmentUrl = result.secure_url;
+    }
+
     const ticket = await Ticket.create({
       title,
       description,
@@ -29,6 +40,7 @@ const createTicket = async (req, res) => {
       priority: priority || "medium",
       raisedBy: req.user._id,
       raisedFor: raisedFor || null,
+      attachmentUrl,
     });
 
     res.status(201).json({ message: "Ticket raised successfully", ticket });

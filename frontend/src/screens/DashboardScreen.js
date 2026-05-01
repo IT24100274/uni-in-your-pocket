@@ -83,16 +83,7 @@ const DashboardScreen = () => {
           ),
         }}
       />
-      <Tab.Screen
-        name="Notices"
-        component={NoticeListScreen}
-        options={{
-          tabBarLabel: "Notices",
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons name="megaphone-outline" color={color} size={size} />
-          ),
-        }}
-      />
+     
 
       {/* Student and rep see My Tickets tab */}
       {(userRole === "student" ||
@@ -179,6 +170,17 @@ const DashboardScreen = () => {
           }}
         />
       )}
+
+       <Tab.Screen
+        name="Notices"
+        component={NoticeListScreen}
+        options={{
+          tabBarLabel: "Notices",
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="megaphone-outline" color={color} size={size} />
+          ),
+        }}
+      />
 
       {/* Settings tab — everyone sees this */}
       <Tab.Screen

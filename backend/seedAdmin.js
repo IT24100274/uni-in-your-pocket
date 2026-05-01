@@ -32,7 +32,7 @@ const seedAdmin = async () => {
     });
 
     console.log("Admin created successfully!");
-    console.log("Email: admin@unipocket.com");
+    console.log("Email: admin@uniocket.com");
     console.log("Password: admin123");
     console.log("IMPORTANT: Change this password after first login!");
 

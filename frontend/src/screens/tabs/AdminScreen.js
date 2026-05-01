@@ -33,6 +33,20 @@ const AdminScreen = () => {
     fetchData();
   }, []);
 
+  const validateNewEmail = (text) => {
+    setNewEmail(text);
+    if (text.length === 0) {
+      setNewEmailError("");
+    } else {
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(text)) {
+        setNewEmailError("Please enter a valid email address");
+      } else {
+        setNewEmailError("");
+      }
+    }
+  };
+
   const fetchData = async () => {
     try {
       const [pendingRes, allRes] = await Promise.all([
@@ -46,20 +60,6 @@ const AdminScreen = () => {
     } finally {
       setLoading(false);
       setRefreshing(false);
-    }
-  };
-
-  const validateNewEmail = (text) => {
-    setNewEmail(text);
-    if (text.length === 0) {
-      setNewEmailError("");
-    } else {
-      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-      if (!emailRegex.test(text)) {
-        setNewEmailError("Please enter a valid email address");
-      } else {
-        setNewEmailError("");
-      }
     }
   };
 
@@ -587,14 +587,6 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: "#333",
   },
-  inputError: {
-    borderColor: "#e74c3c",
-  },
-  errorText: {
-    color: "#e74c3c",
-    fontSize: 12,
-    marginTop: 4,
-  },
   roleContainer: {
     flexDirection: "row",
     gap: 8,
@@ -635,6 +627,14 @@ const styles = StyleSheet.create({
     color: "#ffffff",
     fontSize: 16,
     fontWeight: "bold",
+  },
+  inputError: {
+    borderColor: "#e74c3c",
+  },
+  errorText: {
+    color: "#e74c3c",
+    fontSize: 12,
+    marginTop: 4,
   },
 });
 

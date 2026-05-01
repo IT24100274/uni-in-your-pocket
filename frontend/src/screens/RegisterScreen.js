@@ -11,7 +11,6 @@ import {
   Platform,
   ScrollView,
 } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
 import { registerUser } from "../services/api";
 
 const RegisterScreen = ({ navigation }) => {
@@ -21,10 +20,9 @@ const RegisterScreen = ({ navigation }) => {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [studentId, setStudentId] = useState("");
   const [department, setDepartment] = useState("");
-  const [academicYear, setAcademicYear] = useState("");
-  const [academicSemester, setAcademicSemester] = useState("");
   const [loading, setLoading] = useState(false);
   const [emailError, setEmailError] = useState("");
+
 
   const validateEmail = (text) => {
     setEmail(text);
@@ -63,11 +61,6 @@ const RegisterScreen = ({ navigation }) => {
       return;
     }
 
-    if (!academicYear || !academicSemester) {
-      Alert.alert("Error", "Please enter your Academic Year and Semester");
-      return;
-    }
-
     setLoading(true);
 
     try {
@@ -77,8 +70,6 @@ const RegisterScreen = ({ navigation }) => {
         password,
         studentId: studentId || undefined,
         department: department || undefined,
-        academicYear: academicYear ? Number(academicYear) : undefined,
-        academicSemester: academicSemester ? Number(academicSemester) : undefined,
       };
 
       const response = await registerUser(userData);
@@ -103,9 +94,8 @@ const RegisterScreen = ({ navigation }) => {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
     <KeyboardAvoidingView
-      style={{ flex: 1 }}
+      style={styles.container}
       behavior={Platform.OS === "ios" ? "padding" : "height"}
     >
       <ScrollView
@@ -140,6 +130,8 @@ const RegisterScreen = ({ navigation }) => {
             <Text style={styles.errorText}>{emailError}</Text>
           ) : null}
 
+
+
           <Text style={styles.label}>Password *</Text>
           <TextInput
             style={styles.input}
@@ -161,7 +153,7 @@ const RegisterScreen = ({ navigation }) => {
           <Text style={styles.label}>Student ID *</Text>
           <TextInput
             style={styles.input}
-            placeholder="e.g. IT26123456"
+            placeholder="e.g. IT24100274"
             value={studentId}
             onChangeText={setStudentId}
             autoCapitalize="characters"
@@ -173,26 +165,6 @@ const RegisterScreen = ({ navigation }) => {
             placeholder="e.g. Software Engineering"
             value={department}
             onChangeText={setDepartment}
-          />
-
-          <Text style={styles.label}>Academic Year *</Text>
-          <TextInput
-            style={styles.input}
-            placeholder="1, 2, 3 or 4"
-            value={academicYear}
-            onChangeText={setAcademicYear}
-            keyboardType="numeric"
-            maxLength={1}
-          />
-
-          <Text style={styles.label}>Academic Semester *</Text>
-          <TextInput
-            style={styles.input}
-            placeholder="1 or 2"
-            value={academicSemester}
-            onChangeText={setAcademicSemester}
-            keyboardType="numeric"
-            maxLength={1}
           />
 
           <TouchableOpacity
@@ -219,7 +191,6 @@ const RegisterScreen = ({ navigation }) => {
         </View>
       </ScrollView>
     </KeyboardAvoidingView>
-    </SafeAreaView>
   );
 };
 
@@ -273,14 +244,6 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: "#333",
   },
-  inputError: {
-    borderColor: "#e74c3c",
-  },
-  errorText: {
-    color: "#e74c3c",
-    fontSize: 12,
-    marginTop: 4,
-  },
   button: {
     backgroundColor: "#1a73e8",
     borderRadius: 8,
@@ -307,6 +270,15 @@ const styles = StyleSheet.create({
   linkBold: {
     color: "#1a73e8",
     fontWeight: "bold",
+  },
+
+  inputError: {
+    borderColor: "#e74c3c",
+  },
+  errorText: {
+    color: "#e74c3c",
+    fontSize: 12,
+    marginTop: 4,
   },
 });
 

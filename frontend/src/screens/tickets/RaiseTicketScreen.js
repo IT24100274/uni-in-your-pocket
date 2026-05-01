@@ -305,5 +305,6 @@ const styles = StyleSheet.create({
   submitBtnDisabled: { backgroundColor: "#aaa" },
   submitBtnText: { color: "#fff", fontWeight: "bold", fontSize: 15 },
 });
- 
+
+
 export default RaiseTicketScreen;

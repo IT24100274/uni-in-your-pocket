@@ -16,6 +16,11 @@ const requestEnrollment = async (req, res) => {
       return res.status(404).json({ message: "Course not found" });
     }
 
+    // Lecturer cannot enroll in their own course
+    if (req.user.role === "lecturer" && course.lecturer.toString() === req.user.id) {
+      return res.status(400).json({ message: "You cannot enroll in your own course" });
+    }
+
     // Check if the course is active
     if (!course.isActive) {
       return res
@@ -41,13 +46,15 @@ const requestEnrollment = async (req, res) => {
     const semester = `Y${student.academicYear}S${student.academicSemester}`;
 
     // Check if the student's academic year and semester match the course
-    if (
-      student.academicYear !== course.academicYear ||
-      student.academicSemester !== course.academicSemester
-    ) {
-      return res.status(400).json({
-        message: `You can only enroll in courses for your current academic year and semester (Y${student.academicYear}S${student.academicSemester})`,
-      });
+    if (req.user.role === "student") {
+      if (
+        student.academicYear !== course.academicYear ||
+        student.academicSemester !== course.academicSemester
+      ) {
+        return res.status(400).json({
+          message: `You can only enroll in courses for your current academic year and semester (Y${student.academicYear}S${student.academicSemester})`,
+        });
+      }
     }
 
     // ---- ELIGIBILITY CHECK ----

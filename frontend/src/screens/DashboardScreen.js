@@ -4,6 +4,8 @@ import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
+import NoticeListScreen from "./notices/NoticeListScreen";
+
 // Existing tab screens
 import HomeScreen from "./tabs/HomeScreen";
 import SettingsScreen from "./tabs/SettingsScreen";
@@ -73,6 +75,17 @@ const DashboardScreen = () => {
           tabBarLabel: "Courses",
           tabBarIcon: ({ color, size }) => (
             <Ionicons name="book-outline" color={color} size={size} />
+          ),
+        }}
+      />
+
+      <Tab.Screen
+         name="Notices"
+         component={NoticeListScreen}
+         options={{
+          tabBarLabel: "Notices",
+          tabBarIcon: ({ color, size }) => (
+           <Ionicons name="megaphone-outline" color={color} size={size} />
           ),
         }}
       />

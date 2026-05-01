@@ -4,6 +4,10 @@ import { NavigationContainer } from "@react-navigation/native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
+import NoticeListScreen   from "../screens/notices/NoticeListScreen";
+import NoticeDetailScreen from "../screens/notices/NoticeDetailScreen";
+import CreateNoticeScreen from "../screens/notices/CreateNoticeScreen";
+
 import LoginScreen from "../screens/LoginScreen";
 import RegisterScreen from "../screens/RegisterScreen";
 import DashboardScreen from "../screens/DashboardScreen";
@@ -103,6 +107,24 @@ const AppNavigator = () => {
           component={ManageEnrollmentsScreen}
           options={{ headerShown: true, title: "Manage Enrollments" }}
         />
+      
+
+        <Stack.Screen
+          name="NoticeList"
+          component={NoticeListScreen}
+          options={{ headerShown: true, title: "Notices & Events" }}
+        />
+        <Stack.Screen
+          name="NoticeDetail"
+          component={NoticeDetailScreen}
+          options={{ headerShown: true, title: "Notice" }}
+        />
+         <Stack.Screen
+           name="CreateNotice"
+           component={CreateNoticeScreen}
+           options={{ headerShown: true, title: "New Notice" }}
+        />
+
       </Stack.Navigator>
     </NavigationContainer>
   );

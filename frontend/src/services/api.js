@@ -32,4 +32,10 @@ export const registerUser = (userData) => api.post("/auth/register", userData);
 export const loginUser = (credentials) => api.post("/auth/login", credentials);
 export const getMe = () => api.get("/auth/me");
 
+export const getNotices       = ()         => api.get("/notices");
+export const getNoticeById    = (id)       => api.get(`/notices/${id}`);
+export const createNotice     = (data)     => api.post("/notices", data);
+export const updateNotice     = (id, data) => api.put(`/notices/${id}`, data);
+export const deleteNotice     = (id)       => api.delete(`/notices/${id}`);
+
 export default api;

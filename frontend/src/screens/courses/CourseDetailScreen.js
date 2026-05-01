@@ -140,7 +140,7 @@ const CourseDetailScreen = ({ route, navigation }) => {
       {/* Action buttons based on role */}
 
       {/* Student — show enroll button or status */}
-      {userRole === "student" && (
+      {(userRole === "student" || userRole === "lecturer") && (
         <View style={styles.section}>
           {enrollmentStatus === "approved" && (
             <View style={styles.statusBox}>

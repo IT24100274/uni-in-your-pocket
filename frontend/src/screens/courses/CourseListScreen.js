@@ -7,8 +7,10 @@ import {
   StyleSheet,
   ActivityIndicator,
   TextInput,
+  Alert,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import api from "../../services/api";
 
 const CourseListScreen = ({ navigation }) => {
@@ -16,13 +18,16 @@ const CourseListScreen = ({ navigation }) => {
   const [filteredCourses, setFilteredCourses] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchText, setSearchText] = useState("");
+  const [userRole, setUserRole] = useState(null);
 
-  // Fetch all courses when screen loads
   useEffect(() => {
     fetchCourses();
   }, []);
 
   const fetchCourses = async () => {
+    const userData = await AsyncStorage.getItem('user');
+    const user = JSON.parse(userData);
+    setUserRole(user.role);
     try {
       const response = await api.get("/courses");
       setCourses(response.data);
@@ -45,6 +50,30 @@ const CourseListScreen = ({ navigation }) => {
     setFilteredCourses(filtered);
   };
 
+  const handleDelete = (id) => {
+    Alert.alert(
+      "Delete Course",
+      "Are you sure you want to delete this course?",
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Delete",
+          style: "destructive",
+          onPress: async () => {
+            try {
+              await api.delete("/courses/" + id);
+              setCourses((prev) => prev.filter((c) => c._id !== id));
+              setFilteredCourses((prev) => prev.filter((c) => c._id !== id));
+              Alert.alert("Success", "Course deleted successfully");
+            } catch (error) {
+              console.log("Error deleting course:", error.message);
+            }
+          },
+        },
+      ]
+    );
+  };
+
   // Show loading spinner while fetching
   if (loading) {
     return (
@@ -56,6 +85,15 @@ const CourseListScreen = ({ navigation }) => {
 
   return (
     <SafeAreaView style={styles.container}>
+      {userRole === "admin" && (
+        <TouchableOpacity
+          style={styles.createButton}
+          onPress={() => navigation.navigate("CreateCourse")}
+        >
+          <Text style={styles.createButtonText}>+ Create New Course</Text>
+        </TouchableOpacity>
+      )}
+
       {/* Search bar */}
       <TextInput
         style={styles.searchInput}
@@ -97,6 +135,15 @@ const CourseListScreen = ({ navigation }) => {
             </Text>
 
             <Text style={styles.courseDept}>{item.department}</Text>
+
+            {userRole === "admin" && (
+              <TouchableOpacity
+                style={styles.deleteButton}
+                onPress={() => handleDelete(item._id)}
+              >
+                <Text style={styles.deleteButtonText}>Delete</Text>
+              </TouchableOpacity>
+            )}
           </TouchableOpacity>
         )}
         ListEmptyComponent={
@@ -184,6 +231,30 @@ const styles = StyleSheet.create({
     textAlign: "center",
     color: "#999",
     marginTop: "10%",
+    fontSize: 14,
+  },
+  deleteButton: {
+    marginTop: "3%",
+    backgroundColor: "#d32f2f",
+    borderRadius: 6,
+    paddingVertical: "2%",
+    alignItems: "center",
+  },
+  deleteButtonText: {
+    color: "#fff",
+    fontWeight: "bold",
+    fontSize: 13,
+  },
+  createButton: {
+    backgroundColor: "#1a73e8",
+    borderRadius: 8,
+    paddingVertical: "3%",
+    alignItems: "center",
+    marginBottom: "3%",
+  },
+  createButtonText: {
+    color: "#fff",
+    fontWeight: "bold",
     fontSize: 14,
   },
 });

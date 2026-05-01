@@ -21,7 +21,7 @@ const { protect, authorize } = require("../middleware/authMiddleware");
 // GET  /api/enrollments/my      → student sees their own enrollments
 router
   .route("/")
-  .post(protect, authorize("student"), requestEnrollment);
+  .post(protect, authorize("student", "lecturer"), requestEnrollment);
 
 router.get("/my", protect, authorize("student"), getMyEnrollments);
 

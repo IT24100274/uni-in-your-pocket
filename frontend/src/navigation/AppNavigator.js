@@ -19,6 +19,12 @@ import MyCoursesScreen from "../screens/courses/MyCoursesScreen";
 import MyEnrollmentsScreen from "../screens/enrollments/MyEnrollmentsScreen";
 import ManageEnrollmentsScreen from "../screens/enrollments/ManageEnrollmentsScreen";
 
+import AssignmentListScreen from "../screens/assignments/AssignmentListScreen";
+import AssignmentDetailScreen from "../screens/assignments/AssignmentDetailScreen";
+import CreateAssignmentScreen from "../screens/assignments/CreateAssignmentScreen";
+import SubmitAssignmentScreen from "../screens/assignments/SubmitAssignmentScreen";
+import SubmissionsListScreen from "../screens/assignments/SubmissionsListScreen";
+
 const Stack = createNativeStackNavigator();
 
 const AppNavigator = () => {
@@ -103,6 +109,34 @@ const AppNavigator = () => {
           component={ManageEnrollmentsScreen}
           options={{ headerShown: true, title: "Manage Enrollments" }}
         />
+
+        {/* Assignment screens */}
+<Stack.Screen
+  name="AssignmentList"
+  component={AssignmentListScreen}
+  options={{ headerShown: true, title: "Assignments" }}
+/>
+<Stack.Screen
+  name="AssignmentDetail"
+  component={AssignmentDetailScreen}
+  options={{ headerShown: true, title: "Assignment Details" }}
+/>
+<Stack.Screen
+  name="CreateAssignment"
+  component={CreateAssignmentScreen}
+  options={{ headerShown: true, title: "Create Assignment" }}
+/>
+<Stack.Screen
+  name="SubmitAssignment"
+  component={SubmitAssignmentScreen}
+  options={{ headerShown: true, title: "Submit Assignment" }}
+/>
+<Stack.Screen
+  name="SubmissionsList"
+  component={SubmissionsListScreen}
+  options={{ headerShown: true, title: "Submissions" }}
+/>
+
       </Stack.Navigator>
     </NavigationContainer>
   );

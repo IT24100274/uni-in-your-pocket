@@ -1,9 +1,9 @@
 const Ticket = require("../models/Ticket");
 const User = require("../models/User");
 
-// Create a new ticket
-// route path   POST /api/tickets
-// access by   student, student_representative
+// @desc    Create a new ticket
+// @route   POST /api/tickets
+// @access  Private (student, student_representative)
 const createTicket = async (req, res) => {
   try {
     const { title, description, category, priority, raisedFor } = req.body;
@@ -39,6 +39,24 @@ const createTicket = async (req, res) => {
   }
 };
 
+// @desc    Get all tickets raised by the logged-in user
+// @route   GET /api/tickets/my
+// @access  Private (student, student_representative)
+const getMyTickets = async (req, res) => {
+  try {
+    const tickets = await Ticket.find({ raisedBy: req.user._id })
+      .populate("raisedFor", "name email studentId")
+      .populate("respondedBy", "name role")
+      .populate("forwardedTo", "name role")
+      .sort({ createdAt: -1 }); // newest first
+
+    res.status(200).json(tickets);
+  } catch (error) {
+    res.status(500).json({ message: "Server error", error: error.message });
+  }
+};
+
 module.exports = {
   createTicket,
+  getMyTickets,
 };

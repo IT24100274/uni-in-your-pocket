@@ -28,11 +28,18 @@ const createTicket = async (req, res) => {
     let attachmentUrl = null;
 
     if (req.file) {
+      const maxBytes = 5 * 1024 * 1024; // 5MB
+
       console.log("[createTicket] --- FILE RECEIVED ---");
       console.log("[createTicket] Original name:", req.file.originalname);
       console.log("[createTicket] MIME type:", req.file.mimetype);
       console.log("[createTicket] File size (bytes):", req.file.size);
       console.log("[createTicket] Buffer length:", req.file.buffer?.length);
+
+      if (req.file.size > maxBytes) {
+        console.log("[createTicket] ERROR: File too large");
+        return res.status(400).json({ message: "Attachment too large. Max size is 5MB." });
+      }
 
       if (!req.file.buffer || req.file.buffer.length === 0) {
         console.log("[createTicket] ERROR: File buffer is empty — frontend sent empty file!");

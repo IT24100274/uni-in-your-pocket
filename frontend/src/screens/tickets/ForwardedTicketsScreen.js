@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import {
-  View, Text, FlatList, StyleSheet,
+  View, Text, FlatList, StyleSheet, TextInput,
   ActivityIndicator, TouchableOpacity, Alert,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -25,6 +25,7 @@ const ForwardedTicketsScreen = ({ navigation }) => {
   const [tickets, setTickets] = useState([]);
   const [filtered, setFiltered] = useState([]);
   const [activeFilter, setActiveFilter] = useState("all");
+  const [searchQuery, setSearchQuery] = useState("");
   const [loading, setLoading] = useState(true);
 
   useEffect(() => { fetchTickets(); }, []);
@@ -35,15 +36,19 @@ const ForwardedTicketsScreen = ({ navigation }) => {
   }, [navigation]);
 
   useEffect(() => {
-    if (activeFilter === "all") {
-      setFiltered(tickets);
-    } else {
-      setFiltered(tickets.filter((t) => t.status === activeFilter));
-    }
-  }, [activeFilter, tickets]);
+    const normalized = searchQuery.trim().toLowerCase();
+    const byStatus = activeFilter === "all"
+      ? tickets
+      : tickets.filter((t) => t.status === activeFilter);
+    const bySearch = normalized
+      ? byStatus.filter((t) => t.title?.toLowerCase().includes(normalized))
+      : byStatus;
+    setFiltered(bySearch);
+  }, [activeFilter, searchQuery, tickets]);
 
   const fetchTickets = async () => {
     try {
+      setLoading(true);
       const res = await getForwardedTickets();
       setTickets(res.data);
       setFiltered(res.data);
@@ -60,6 +65,13 @@ const ForwardedTicketsScreen = ({ navigation }) => {
 
   return (
     <SafeAreaView style={styles.container}>
+      <TextInput
+        style={styles.searchInput}
+        placeholder="Search by title..."
+        value={searchQuery}
+        onChangeText={setSearchQuery}
+      />
+
       <FlatList
         data={FILTERS}
         horizontal
@@ -121,7 +133,9 @@ const ForwardedTicketsScreen = ({ navigation }) => {
         )}
         ListEmptyComponent={
           <View style={styles.emptyContainer}>
-            <Text style={styles.emptyText}>No tickets forwarded to you yet</Text>
+            <Text style={styles.emptyText}>
+              {searchQuery.trim() ? "No tickets match your search" : "No tickets forwarded to you yet"}
+            </Text>
           </View>
         }
       />
@@ -132,6 +146,7 @@ const ForwardedTicketsScreen = ({ navigation }) => {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: "#f5f5f5", padding: "4%" },
   centered: { flex: 1, justifyContent: "center", alignItems: "center" },
+  searchInput: { backgroundColor: "#fff", borderWidth: 1, borderColor: "#e0e0e0", borderRadius: 8, padding: 10, fontSize: 13, color: "#333", marginBottom: 10 },
   filterBar: { marginBottom: 12, flexGrow: 0 },
   filterBtn: { paddingHorizontal: 14, paddingVertical: 7, borderRadius: 20, borderWidth: 1, borderColor: "#ccc", backgroundColor: "#fff", marginRight: 8 },
   filterBtnActive: { backgroundColor: "#1a73e8", borderColor: "#1a73e8" },

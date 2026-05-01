@@ -1,10 +1,12 @@
 import React, { useState, useEffect } from "react";
 import {
-  View, Text, FlatList, StyleSheet,
+  View, Text, FlatList, StyleSheet, TextInput,
   ActivityIndicator, TouchableOpacity, Alert,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { getMyTickets } from "../../services/api";
+
+const FILTERS = ["all", "open", "forwarded", "in_progress", "resolved", "closed"];
 
 const STATUS_STYLES = {
   open:        { badge: { backgroundColor: "#e8f0fe" }, text: { color: "#1a73e8" } },
@@ -22,6 +24,9 @@ const PRIORITY_STYLES = {
 
 const TicketsScreen = ({ navigation }) => {
   const [tickets, setTickets] = useState([]);
+  const [filtered, setFiltered] = useState([]);
+  const [activeFilter, setActiveFilter] = useState("all");
+  const [searchQuery, setSearchQuery] = useState("");
   const [loading, setLoading] = useState(true);
 
   useEffect(() => { fetchTickets(); }, []);
@@ -31,8 +36,20 @@ const TicketsScreen = ({ navigation }) => {
     return unsubscribe;
   }, [navigation]);
 
+  useEffect(() => {
+    const normalized = searchQuery.trim().toLowerCase();
+    const byStatus = activeFilter === "all"
+      ? tickets
+      : tickets.filter((t) => t.status === activeFilter);
+    const bySearch = normalized
+      ? byStatus.filter((t) => t.title?.toLowerCase().includes(normalized))
+      : byStatus;
+    setFiltered(bySearch);
+  }, [activeFilter, searchQuery, tickets]);
+
   const fetchTickets = async () => {
     try {
+      setLoading(true);
       const res = await getMyTickets();
       setTickets(res.data);
     } catch (error) {
@@ -52,8 +69,33 @@ const TicketsScreen = ({ navigation }) => {
         <Text style={styles.raiseBtnText}>+ Raise a Ticket</Text>
       </TouchableOpacity>
 
+      <TextInput
+        style={styles.searchInput}
+        placeholder="Search by title..."
+        value={searchQuery}
+        onChangeText={setSearchQuery}
+      />
+
       <FlatList
-        data={tickets}
+        data={FILTERS}
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        keyExtractor={(item) => item}
+        style={styles.filterBar}
+        renderItem={({ item }) => (
+          <TouchableOpacity
+            style={[styles.filterBtn, activeFilter === item && styles.filterBtnActive]}
+            onPress={() => setActiveFilter(item)}
+          >
+            <Text style={[styles.filterText, activeFilter === item && styles.filterTextActive]}>
+              {item.replace("_", " ")}
+            </Text>
+          </TouchableOpacity>
+        )}
+      />
+
+      <FlatList
+        data={filtered}
         keyExtractor={(item) => item._id}
         renderItem={({ item }) => (
           <TouchableOpacity style={styles.card} onPress={() => navigation.navigate("TicketDetail", { ticketId: item._id })}>
@@ -85,8 +127,12 @@ const TicketsScreen = ({ navigation }) => {
         )}
         ListEmptyComponent={
           <View style={styles.emptyContainer}>
-            <Text style={styles.emptyText}>No tickets raised yet</Text>
-            <Text style={styles.emptySubText}>Tap the button above to raise your first ticket</Text>
+            <Text style={styles.emptyText}>
+              {searchQuery.trim() ? "No tickets match your search" : "No tickets raised yet"}
+            </Text>
+            {!searchQuery.trim() && (
+              <Text style={styles.emptySubText}>Tap the button above to raise your first ticket</Text>
+            )}
           </View>
         }
       />
@@ -99,6 +145,12 @@ const styles = StyleSheet.create({
   centered: { flex: 1, justifyContent: "center", alignItems: "center" },
   raiseBtn: { backgroundColor: "#1a73e8", padding: "4%", borderRadius: 8, alignItems: "center", marginBottom: "4%" },
   raiseBtnText: { color: "#fff", fontWeight: "bold", fontSize: 15 },
+  searchInput: { backgroundColor: "#fff", borderWidth: 1, borderColor: "#e0e0e0", borderRadius: 8, padding: 10, fontSize: 13, color: "#333", marginBottom: 10 },
+  filterBar: { marginBottom: 10, flexGrow: 0 },
+  filterBtn: { paddingHorizontal: 14, paddingVertical: 7, borderRadius: 20, borderWidth: 1, borderColor: "#ccc", backgroundColor: "#fff", marginRight: 8 },
+  filterBtnActive: { backgroundColor: "#1a73e8", borderColor: "#1a73e8" },
+  filterText: { fontSize: 12, color: "#555", textTransform: "capitalize" },
+  filterTextActive: { color: "#fff", fontWeight: "bold" },
   card: { backgroundColor: "#fff", borderRadius: 10, padding: "4%", marginBottom: "3%", borderWidth: 1, borderColor: "#e0e0e0" },
   cardHeader: { flexDirection: "row", alignItems: "center", marginBottom: "3%" },
   priorityDot: { width: 8, height: 8, borderRadius: 4, marginRight: 8 },

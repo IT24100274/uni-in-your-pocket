@@ -64,11 +64,13 @@ const TicketDetailScreen = ({ route, navigation }) => {
   const [responseText, setResponseText] = useState("");
   const [responseStatus, setResponseStatus] = useState("in_progress");
   const [submittingResponse, setSubmittingResponse] = useState(false);
+  const [closing, setClosing] = useState(false);
 
   const [staffList, setStaffList] = useState([]);
   const [selectedStaff, setSelectedStaff] = useState(null);
   const [showStaffPicker, setShowStaffPicker] = useState(false);
   const [submittingForward, setSubmittingForward] = useState(false);
+  const [deleting, setDeleting] = useState(false);
 
   useEffect(() => { loadUserAndTicket(); }, []);
 
@@ -168,6 +170,7 @@ const TicketDetailScreen = ({ route, navigation }) => {
       {
         text: "Close", style: "destructive", onPress: async () => {
           try {
+            setClosing(true);
             // DEBUG_START
             console.log("[TicketDetail] Closing ticket:", ticketId);
             // DEBUG_END
@@ -180,6 +183,8 @@ const TicketDetailScreen = ({ route, navigation }) => {
             console.log("[TicketDetail] ERROR closing:", error.response?.data?.message || error.message);
             // DEBUG_END
             Alert.alert("Error", error.response?.data?.message || "Failed to close ticket");
+          } finally {
+            setClosing(false);
           }
         },
       },
@@ -192,6 +197,7 @@ const TicketDetailScreen = ({ route, navigation }) => {
       {
         text: "Delete", style: "destructive", onPress: async () => {
           try {
+            setDeleting(true);
             // DEBUG_START
             console.log("[TicketDetail] Deleting ticket:", ticketId);
             // DEBUG_END
@@ -204,6 +210,8 @@ const TicketDetailScreen = ({ route, navigation }) => {
             console.log("[TicketDetail] ERROR deleting:", error.response?.data?.message || error.message);
             // DEBUG_END
             Alert.alert("Error", error.response?.data?.message || "Failed to delete ticket");
+          } finally {
+            setDeleting(false);
           }
         },
       },
@@ -382,15 +390,29 @@ const TicketDetailScreen = ({ route, navigation }) => {
 
         {/* Close button */}
         {ticket.status !== "closed" && (
-          <TouchableOpacity style={[styles.actionBtn, styles.closeBtn]} onPress={handleClose}>
-            <Text style={styles.actionBtnText}>Close Ticket</Text>
+          <TouchableOpacity
+            style={[styles.actionBtn, styles.closeBtn, closing && styles.btnDisabled]}
+            onPress={handleClose}
+            disabled={closing}
+          >
+            {closing
+              ? <ActivityIndicator color="#fff" />
+              : <Text style={styles.actionBtnText}>Close Ticket</Text>
+            }
           </TouchableOpacity>
         )}
 
         {/* Delete button — admin only */}
         {userRole === "admin" && (
-          <TouchableOpacity style={[styles.actionBtn, styles.deleteBtn]} onPress={handleDelete}>
-            <Text style={styles.actionBtnText}>Delete Ticket</Text>
+          <TouchableOpacity
+            style={[styles.actionBtn, styles.deleteBtn, deleting && styles.btnDisabled]}
+            onPress={handleDelete}
+            disabled={deleting}
+          >
+            {deleting
+              ? <ActivityIndicator color="#fff" />
+              : <Text style={styles.actionBtnText}>Delete Ticket</Text>
+            }
           </TouchableOpacity>
         )}
 

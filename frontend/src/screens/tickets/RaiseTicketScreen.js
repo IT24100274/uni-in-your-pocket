@@ -10,6 +10,7 @@ import { getStudentsList } from "../../services/api";
  
 const CATEGORIES = ["academic", "administrative", "course_related", "facility", "it_support", "other"];
 const PRIORITIES = ["low", "medium", "high"];
+const MAX_ATTACHMENT_BYTES = 5 * 1024 * 1024; // 5MB
  
 const API_URL = process.env.EXPO_PUBLIC_API_URL;
  
@@ -64,6 +65,10 @@ const RaiseTicketScreen = ({ navigation }) => {
         console.log("[RaiseTicket] mimeType:", file.mimeType, "| size:", file.size);
         console.log("[RaiseTicket] uri:", file.uri);
         // DEBUG_END
+        if (file.size > MAX_ATTACHMENT_BYTES) {
+          Alert.alert("Attachment too large", "Please select a file under 5MB");
+          return;
+        }
         setAttachment(file);
       }
     } catch (error) {
@@ -97,6 +102,9 @@ const RaiseTicketScreen = ({ navigation }) => {
       if (attachment) {
         if (attachment.size === 0) {
           throw new Error("Selected file is empty. Please reselect the file.");
+        }
+        if (attachment.size > MAX_ATTACHMENT_BYTES) {
+          throw new Error("Attachment too large. Please select a file under 5MB.");
         }
         const fileUri = attachment.fileCopyUri || attachment.uri;
         const ext = fileUri.split(".").pop().toLowerCase();
@@ -209,7 +217,7 @@ const RaiseTicketScreen = ({ navigation }) => {
           ))}
         </View>
  
-        <Text style={styles.label}>Attachment (optional)</Text>
+        <Text style={styles.label}>Attachment (optional, max 5MB)</Text>
         <TouchableOpacity style={styles.attachBtn} onPress={pickAttachment}>
           <Text style={styles.attachBtnText}>
             {attachment ? `✓  ${attachment.name}` : "Tap to attach image or PDF"}

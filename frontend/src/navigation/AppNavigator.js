@@ -8,6 +8,10 @@ import LoginScreen from "../screens/LoginScreen";
 import RegisterScreen from "../screens/RegisterScreen";
 import DashboardScreen from "../screens/DashboardScreen";
 
+import NoticeListScreen from "../screens/notices/NoticeListScreen";
+import NoticeDetailScreen from "../screens/notices/NoticeDetailScreen";
+import CreateNoticeScreen from "../screens/notices/CreateNoticeScreen";
+
 // Course screens
 import CourseListScreen from "../screens/courses/CourseListScreen";
 import CourseDetailScreen from "../screens/courses/CourseDetailScreen";
@@ -97,6 +101,23 @@ const AppNavigator = () => {
           name="MyCourses"
           component={MyCoursesScreen}
           options={{ headerShown: true, title: "My Courses" }}
+        />
+
+        <Stack.Screen 
+        name="NoticeList" 
+        component={NoticeListScreen} 
+        options={{ headerShown: true, title: "Notices & Events" }} 
+        />
+
+        <Stack.Screen
+         name="NoticeDetail" 
+         component={NoticeDetailScreen} 
+         options={{ headerShown: true, title: "Notice" }} 
+         />
+        <Stack.Screen 
+        name="CreateNotice" 
+        component={CreateNoticeScreen} 
+        options={{ headerShown: true, title: "New Notice" }} 
         />
 
         {/* Enrollment screens */}

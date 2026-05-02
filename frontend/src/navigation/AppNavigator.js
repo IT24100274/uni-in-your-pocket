@@ -23,6 +23,11 @@ import MyCoursesScreen from "../screens/courses/MyCoursesScreen";
 import MyEnrollmentsScreen from "../screens/enrollments/MyEnrollmentsScreen";
 import ManageEnrollmentsScreen from "../screens/enrollments/ManageEnrollmentsScreen";
 
+import AssignmentListScreen from "../screens/assignments/AssignmentListScreen";
+import AssignmentDetailScreen from "../screens/assignments/AssignmentDetailScreen";
+import CreateAssignmentScreen from "../screens/assignments/CreateAssignmentScreen";
+import SubmitAssignmentScreen from "../screens/assignments/SubmitAssignmentScreen";
+import SubmissionsListScreen from "../screens/assignments/SubmissionsListScreen";
 // Mahdhi Ticket screens
 import TicketsScreen from "../screens/tickets/TicketsScreen";
 import RaiseTicketScreen from "../screens/tickets/RaiseTicketScreen";
@@ -132,6 +137,32 @@ const AppNavigator = () => {
           options={{ headerShown: true, title: "Manage Enrollments" }}
         />
 
+        {/* Assignment screens */}
+<Stack.Screen
+  name="AssignmentList"
+  component={AssignmentListScreen}
+  options={{ headerShown: true, title: "Assignments" }}
+/>
+<Stack.Screen
+  name="AssignmentDetail"
+  component={AssignmentDetailScreen}
+  options={{ headerShown: true, title: "Assignment Details" }}
+/>
+<Stack.Screen
+  name="CreateAssignment"
+  component={CreateAssignmentScreen}
+  options={{ headerShown: true, title: "Create Assignment" }}
+/>
+<Stack.Screen
+  name="SubmitAssignment"
+  component={SubmitAssignmentScreen}
+  options={{ headerShown: true, title: "Submit Assignment" }}
+/>
+<Stack.Screen
+  name="SubmissionsList"
+  component={SubmissionsListScreen}
+  options={{ headerShown: true, title: "Submissions" }}
+/>
         {/* Mahdhi Ticket screens */}
         <Stack.Screen name="TicketDetail" component={TicketDetailScreen} options={{ headerShown: true, title: "Ticket Details" }} />
         <Stack.Screen name="RaiseTicket" component={RaiseTicketScreen} options={{ headerShown: true, title: "Raise a Ticket" }} />

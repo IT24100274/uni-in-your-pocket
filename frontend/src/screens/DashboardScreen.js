@@ -3,6 +3,7 @@ import { View, Text } from "react-native";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import AssignmentListScreen from "./assignments/AssignmentListScreen";
 
 import NoticeListScreen from "./notices/NoticeListScreen";
 
@@ -83,6 +84,18 @@ const DashboardScreen = () => {
           ),
         }}
       />
+      
+      {/* Assignments tab — everyone sees this */}
+<Tab.Screen
+  name="Assignments"
+  component={AssignmentListScreen}
+  options={{
+    tabBarLabel: "Assignments",
+    tabBarIcon: ({ color, size }) => (
+      <Ionicons name="document-text-outline" color={color} size={size} />
+    ),
+  }}
+/>
       <Tab.Screen
         name="Notices"
         component={NoticeListScreen}

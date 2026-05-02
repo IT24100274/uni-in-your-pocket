@@ -14,12 +14,14 @@ const upload = multer({ storage: multer.memoryStorage() });
 
 // This function takes the file from memory and uploads it to Cloudinary
 // We call this manually inside our controller
-const uploadToCloudinary = (fileBuffer, folder, resourceType = "auto") => {
+// extraOptions allows passing additional Cloudinary options (e.g. use_filename, filename_override)
+const uploadToCloudinary = (fileBuffer, folder, resourceType = "auto", extraOptions = {}) => {
   return new Promise((resolve, reject) => {
     const stream = cloudinary.uploader.upload_stream(
       { 
         folder: folder,
         resource_type: resourceType,
+        ...extraOptions,
       },
       (error, result) => {
         if (error) reject(error);

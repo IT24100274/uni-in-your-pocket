@@ -15,6 +15,12 @@ import MyCoursesScreen from "./courses/MyCoursesScreen";
 import MyEnrollmentsScreen from "./enrollments/MyEnrollmentsScreen";
 import ManageEnrollmentsScreen from "./enrollments/ManageEnrollmentsScreen";
 
+// Marks & Results screens used as tabs
+import EnterMarksScreen from "./marks/EnterMarksScreen";
+import ManageResultsScreen from "./marks/ManageResultsScreen";
+import ResultsListScreen from "./marks/ResultsListScreen";
+import AdminResultsScreen from "./marks/AdminResultsScreen";
+
 const Tab = createBottomTabNavigator();
 
 const DashboardScreen = () => {
@@ -86,7 +92,30 @@ const DashboardScreen = () => {
           options={{
             tabBarLabel: "Enrollments",
             tabBarIcon: ({ color, size }) => (
-              <Ionicons name="checkmark-circle-outline" color={color} size={size} />
+              <Ionicons
+                name="checkmark-circle-outline"
+                color={color}
+                size={size}
+              />
+            ),
+          }}
+        />
+      )}
+
+      {/* Student sees My Results tab */}
+      {(userRole === "student" ||
+        userRole === "student_representative") && (
+        <Tab.Screen
+          name="MyResults"
+          component={ResultsListScreen}
+          options={{
+            tabBarLabel: "Results",
+            tabBarIcon: ({ color, size }) => (
+              <Ionicons
+                name="stats-chart-outline"
+                color={color}
+                size={size}
+              />
             ),
           }}
         />
@@ -106,6 +135,38 @@ const DashboardScreen = () => {
         />
       )}
 
+      {/* Lecturer sees Enter Marks tab */}
+      {userRole === "lecturer" && (
+        <Tab.Screen
+          name="EnterMarks"
+          component={EnterMarksScreen}
+          options={{
+            tabBarLabel: "Enter Marks",
+            tabBarIcon: ({ color, size }) => (
+              <Ionicons name="create-outline" color={color} size={size} />
+            ),
+          }}
+        />
+      )}
+
+      {/* Lecturer sees Manage Results tab */}
+      {userRole === "lecturer" && (
+        <Tab.Screen
+          name="ManageResults"
+          component={ManageResultsScreen}
+          options={{
+            tabBarLabel: "Results",
+            tabBarIcon: ({ color, size }) => (
+              <Ionicons
+                name="stats-chart-outline"
+                color={color}
+                size={size}
+              />
+            ),
+          }}
+        />
+      )}
+
       {/* Admin sees Manage Enrollments tab */}
       {userRole === "admin" && (
         <Tab.Screen
@@ -114,7 +175,29 @@ const DashboardScreen = () => {
           options={{
             tabBarLabel: "Enrollments",
             tabBarIcon: ({ color, size }) => (
-              <Ionicons name="checkmark-circle-outline" color={color} size={size} />
+              <Ionicons
+                name="checkmark-circle-outline"
+                color={color}
+                size={size}
+              />
+            ),
+          }}
+        />
+      )}
+
+      {/* Admin sees All Results tab */}
+      {userRole === "admin" && (
+        <Tab.Screen
+          name="AdminResults"
+          component={AdminResultsScreen}
+          options={{
+            tabBarLabel: "Results",
+            tabBarIcon: ({ color, size }) => (
+              <Ionicons
+                name="stats-chart-outline"
+                color={color}
+                size={size}
+              />
             ),
           }}
         />

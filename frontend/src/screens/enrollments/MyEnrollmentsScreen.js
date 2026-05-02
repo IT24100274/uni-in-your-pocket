@@ -168,7 +168,7 @@ const MyEnrollmentsScreen = ({ navigation }) => {
             </Text>
             <TouchableOpacity
               style={styles.browseBtn}
-              onPress={() => navigation.navigate("CourseList")}
+              onPress={() => navigation.navigate("Courses")}
             >
               <Text style={styles.browseBtnText}>Browse Courses</Text>
             </TouchableOpacity>

@@ -8,13 +8,27 @@ import LoginScreen from "../screens/LoginScreen";
 import RegisterScreen from "../screens/RegisterScreen";
 import DashboardScreen from "../screens/DashboardScreen";
 
+// Course Screens
+import CourseDetailScreen from "../screens/courses/CourseDetailScreen";
+import CreateCourseScreen from "../screens/courses/CreateCourseScreen";
+import EditCourseScreen from "../screens/courses/EditCourseScreen";
+
+// Enrollment Screens
+import ManageEnrollmentsScreen from "../screens/enrollments/ManageEnrollmentsScreen";
+
+// Marks & Results Screens
+import EnterMarksScreen from "../screens/marks/EnterMarksScreen";
+import ManageResultsScreen from "../screens/marks/ManageResultsScreen";
+import ResultsListScreen from "../screens/marks/ResultsListScreen";
+import ResultDetailScreen from "../screens/marks/ResultDetailScreen";
+import AdminResultsScreen from "../screens/marks/AdminResultsScreen";
+
 const Stack = createNativeStackNavigator();
 
 const AppNavigator = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
 
-  // Check if user is already logged in when app opens
   useEffect(() => {
     checkLoginStatus();
   }, []);
@@ -32,7 +46,6 @@ const AppNavigator = () => {
     }
   };
 
-  // Show loading spinner while checking login status
   if (isLoading) {
     return (
       <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
@@ -52,6 +65,57 @@ const AppNavigator = () => {
         <Stack.Screen name="Login" component={LoginScreen} />
         <Stack.Screen name="Register" component={RegisterScreen} />
         <Stack.Screen name="Dashboard" component={DashboardScreen} />
+
+        {/* Course Screens */}
+        <Stack.Screen
+          name="CreateCourse"
+          component={CreateCourseScreen}
+          options={{ headerShown: true, title: "Create Course" }}
+        />
+        <Stack.Screen
+          name="CourseDetail"
+          component={CourseDetailScreen}
+          options={{ headerShown: true, title: "Course Details" }}
+        />
+        <Stack.Screen
+          name="EditCourse"
+          component={EditCourseScreen}
+          options={{ headerShown: true, title: "Edit Course" }}
+        />
+
+        {/* Enrollment Screens */}
+        <Stack.Screen
+          name="ManageEnrollments"
+          component={ManageEnrollmentsScreen}
+          options={{ headerShown: true, title: "Manage Enrollments" }}
+        />
+
+        {/* Marks & Results Screens */}
+        <Stack.Screen
+          name="EnterMarks"
+          component={EnterMarksScreen}
+          options={{ headerShown: true, title: "Enter Marks" }}
+        />
+        <Stack.Screen
+          name="ManageResults"
+          component={ManageResultsScreen}
+          options={{ headerShown: true, title: "Manage Results" }}
+        />
+        <Stack.Screen
+          name="ResultsList"
+          component={ResultsListScreen}
+          options={{ headerShown: true, title: "My Results" }}
+        />
+        <Stack.Screen
+          name="ResultDetail"
+          component={ResultDetailScreen}
+          options={{ headerShown: true, title: "Result Details" }}
+        />
+        <Stack.Screen
+          name="AdminResults"
+          component={AdminResultsScreen}
+          options={{ headerShown: true, title: "Manage All Results" }}
+        />
       </Stack.Navigator>
     </NavigationContainer>
   );

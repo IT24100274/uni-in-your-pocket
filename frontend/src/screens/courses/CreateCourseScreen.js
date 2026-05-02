@@ -101,9 +101,7 @@ const CreateCourseScreen = ({ navigation }) => {
         });
       }
 
-      await api.post("/courses", formData, {
-        headers: { "Content-Type": "multipart/form-data" },
-      });
+      await api.post("/courses", formData);
 
       Alert.alert("Success", "Course created successfully!");
       navigation.goBack();

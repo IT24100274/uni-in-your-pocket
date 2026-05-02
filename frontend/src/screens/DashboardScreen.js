@@ -11,6 +11,7 @@ import NoticeListScreen from "./notices/NoticeListScreen";
 import HomeScreen from "./tabs/HomeScreen";
 import SettingsScreen from "./tabs/SettingsScreen";
 import AdminScreen from "./tabs/AdminScreen";
+import MoreScreen from "./tabs/MoreScreen";
 
 // Course and enrollment screens used as tabs
 import CourseListScreen from "./courses/CourseListScreen";
@@ -107,6 +108,19 @@ const DashboardScreen = () => {
         }}
       />
 
+      {/* More tab — everyone sees this */}
+      <Tab.Screen
+        name="More"
+        component={MoreScreen}
+        initialParams={{ userRole }}
+        options={{
+          tabBarLabel: "More",
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="ellipsis-horizontal-outline" color={color} size={size} />
+          ),
+        }}
+      />
+
       {/* Student and rep see My Tickets tab */}
       {(userRole === "student" ||
         userRole === "student_representative") && (
@@ -118,6 +132,8 @@ const DashboardScreen = () => {
             tabBarIcon: ({ color, size }) => (
               <Ionicons name="ticket-outline" color={color} size={size} />
             ),
+            tabBarButton: () => null,
+            tabBarItemStyle: { display: "none" },
           }}
         />
       )}
@@ -133,6 +149,8 @@ const DashboardScreen = () => {
             tabBarIcon: ({ color, size }) => (
               <Ionicons name="checkmark-circle-outline" color={color} size={size} />
             ),
+            tabBarButton: () => null,
+            tabBarItemStyle: { display: "none" },
           }}
         />
       )}
@@ -147,6 +165,8 @@ const DashboardScreen = () => {
             tabBarIcon: ({ color, size }) => (
               <Ionicons name="library-outline" color={color} size={size} />
             ),
+            tabBarButton: () => null,
+            tabBarItemStyle: { display: "none" },
           }}
         />
       )}
@@ -154,7 +174,12 @@ const DashboardScreen = () => {
       {/* Forwarded Tickets — lecturer */}
       {userRole === "lecturer" && (
         <Tab.Screen name="ForwardedTickets" component={ForwardedTicketsScreen}
-          options={{ tabBarLabel: "Tickets", tabBarIcon: ({ color, size }) => <Ionicons name="mail-unread-outline" color={color} size={size} /> }}
+          options={{
+            tabBarLabel: "Tickets",
+            tabBarIcon: ({ color, size }) => <Ionicons name="mail-unread-outline" color={color} size={size} />,
+            tabBarButton: () => null,
+            tabBarItemStyle: { display: "none" },
+          }}
         />
       )}
 
@@ -168,6 +193,8 @@ const DashboardScreen = () => {
             tabBarIcon: ({ color, size }) => (
               <Ionicons name="checkmark-circle-outline" color={color} size={size} />
             ),
+            tabBarButton: () => null,
+            tabBarItemStyle: { display: "none" },
           }}
         />
       )}
@@ -175,7 +202,12 @@ const DashboardScreen = () => {
       {/* Manage Tickets — admin and rep */}
       {(userRole === "admin" || userRole === "student_representative") && (
         <Tab.Screen name="ManageTickets" component={ManageTicketsScreen}
-          options={{ tabBarLabel: "Tickets", tabBarIcon: ({ color, size }) => <Ionicons name="ticket-outline" color={color} size={size} /> }}
+          options={{
+            tabBarLabel: "Tickets",
+            tabBarIcon: ({ color, size }) => <Ionicons name="ticket-outline" color={color} size={size} />,
+            tabBarButton: () => null,
+            tabBarItemStyle: { display: "none" },
+          }}
         />
       )}
 
@@ -189,11 +221,13 @@ const DashboardScreen = () => {
             tabBarIcon: ({ color, size }) => (
               <Ionicons name="people-outline" color={color} size={size} />
             ),
+            tabBarButton: () => null,
+            tabBarItemStyle: { display: "none" },
           }}
         />
       )}
 
-      {/* Settings tab — everyone sees this */}
+      {/* Settings tab — hidden, accessed from More */}
       <Tab.Screen
         name="Settings"
         component={SettingsScreen}
@@ -202,6 +236,8 @@ const DashboardScreen = () => {
           tabBarIcon: ({ color, size }) => (
             <Ionicons name="settings-outline" color={color} size={size} />
           ),
+          tabBarButton: () => null,
+          tabBarItemStyle: { display: "none" },
         }}
       />
     </Tab.Navigator>

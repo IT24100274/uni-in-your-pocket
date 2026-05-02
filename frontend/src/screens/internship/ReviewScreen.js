@@ -1,0 +1,455 @@
+import React, { useState, useCallback } from "react";
+import {
+  View, Text, ScrollView, StyleSheet, TouchableOpacity,
+  TextInput, Alert, ActivityIndicator, FlatList, Linking,
+} from "react-native";
+import { useFocusEffect } from "@react-navigation/native";
+import api from "../../services/api";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+
+/*
+ * ReviewScreen — Lecturer + Admin
+ * This screen serves two roles in the Internship Tracker module.
+ * Lecturers can view all student weekly logs, filter by status, approve or reject
+ * individual logs, and leave comments that students can see in their log history.
+ * Admins can view all placements, verify them, view company letters, and see
+ * a risk flag summary showing students with missing logs or missing company letters.
+ * The screen automatically switches view based on the logged-in user's role.
+ */
+
+const ReviewScreen = ({ navigation, route }) => {
+  const [userRole, setUserRole] = useState(null);
+  const [logs, setLogs] = useState([]);
+  const [placements, setPlacements] = useState([]);
+  const [risks, setRisks] = useState([]);
+  const [selectedLog, setSelectedLog] = useState(null);
+  const [comment, setComment] = useState("");
+  const [loading, setLoading] = useState(true);
+  const [reviewing, setReviewing] = useState(false);
+  const [activeTab, setActiveTab] = useState("logs");
+  const [filterStatus, setFilterStatus] = useState("all");
+
+  const fetchData = async () => {
+    try {
+      setLoading(true);
+      const userData = await AsyncStorage.getItem("user");
+      const user = JSON.parse(userData);
+      const role = user.role;
+      setUserRole(role);
+
+      if (role === "lecturer" || role === "admin") {
+        const logsRes = await api.get("/internship/logs/all");
+        setLogs(logsRes.data.logs);
+      }
+
+      if (role === "admin") {
+const placementsRes = await api.get("/internship/admin/all");
+setPlacements(placementsRes.data.internships || []);
+        const risksRes = await api.get("/internship/admin/risks");
+        setRisks(risksRes.data.riskList);
+      }
+
+      if (route?.params?.logId && route?.params?.mode === "detail") {
+        const logRes = await api.get(`/internship/logs/${route.params.logId}`);
+        setSelectedLog(logRes.data.log);
+      }
+    } catch (error) {
+      Alert.alert("Error", "Could not load data");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useFocusEffect(useCallback(() => { fetchData(); }, []));
+
+  const handleReview = async (logId, status) => {
+    setReviewing(true);
+    try {
+      await api.patch(`/internship/logs/${logId}/review`, { status, lecturerComment: comment });
+      Alert.alert("Success", `Log ${status} successfully`);
+      setSelectedLog(null);
+      setComment("");
+      fetchData();
+    } catch (error) {
+      Alert.alert("Error", error.response?.data?.message || "Something went wrong");
+    } finally {
+      setReviewing(false);
+    }
+  };
+
+  const handleVerify = async (placementId) => {
+    try {
+      await api.patch(`/internship/${placementId}/verify`);
+      Alert.alert("Success", "Placement verified successfully");
+      fetchData();
+    } catch (error) {
+      Alert.alert("Error", "Could not verify placement");
+    }
+  };
+
+  const getStatusColor = (status) => {
+    const colors = { approved: "#059669", rejected: "#dc2626", pending: "#d97706", active: "#059669" };
+    return colors[status] || "#6b7280";
+  };
+
+  const getStatusBg = (status) => {
+    const colors = { approved: "#d1fae5", rejected: "#fee2e2", pending: "#fef3c7", active: "#d1fae5" };
+    return colors[status] || "#f3f4f6";
+  };
+
+  const filteredLogs = filterStatus === "all" ? logs : logs.filter(l => l.status === filterStatus);
+
+  if (loading) {
+    return <View style={styles.centered}><ActivityIndicator size="large" color="#1a56db" /></View>;
+  }
+
+  // Log detail view when student taps a log from LogScreen
+  if (selectedLog) {
+    return (
+      <ScrollView style={styles.container} contentContainerStyle={styles.content}>
+        <TouchableOpacity style={styles.backBtn} onPress={() => setSelectedLog(null)}>
+          <Text style={styles.backBtnText}>‹ Back</Text>
+        </TouchableOpacity>
+
+        <Text style={styles.title}>Log Detail</Text>
+
+        <View style={styles.card}>
+          <Text style={styles.cardTitle}>Week {selectedLog.weekNumber}</Text>
+          <Text style={styles.fieldLabel}>Date</Text>
+          <Text style={styles.fieldValue}>{new Date(selectedLog.logDate).toDateString()}</Text>
+          <Text style={styles.fieldLabel}>Category</Text>
+          <Text style={styles.fieldValue} style={{ textTransform: "capitalize" }}>{selectedLog.category}</Text>
+          <Text style={styles.fieldLabel}>Status</Text>
+          <View style={[styles.statusBadge, { backgroundColor: getStatusBg(selectedLog.status) }]}>
+            <Text style={[styles.statusText, { color: getStatusColor(selectedLog.status) }]}>
+              {selectedLog.status.toUpperCase()}
+            </Text>
+          </View>
+        </View>
+
+        <View style={styles.card}>
+          <Text style={styles.cardTitle}>Log Description</Text>
+          <Text style={styles.fieldValue}>{selectedLog.logDescription}</Text>
+        </View>
+
+        <View style={styles.card}>
+          <Text style={styles.cardTitle}>Tasks Completed</Text>
+          <Text style={styles.fieldValue}>{selectedLog.tasksCompleted}</Text>
+        </View>
+
+        {selectedLog.evidenceUrl ? (
+          <TouchableOpacity style={styles.evidenceBtn} onPress={() => Linking.openURL(selectedLog.evidenceUrl)}>
+            <Text style={styles.evidenceBtnText}>📎 View Uploaded Evidence</Text>
+          </TouchableOpacity>
+        ) : null}
+
+        {selectedLog.lecturerComment ? (
+          <View style={styles.commentCard}>
+            <Text style={styles.commentLabel}>💬 Lecturer Comment</Text>
+            <Text style={styles.commentText}>{selectedLog.lecturerComment}</Text>
+            {selectedLog.reviewedAt && (
+              <Text style={styles.commentDate}>
+                Reviewed: {new Date(selectedLog.reviewedAt).toDateString()}
+              </Text>
+            )}
+          </View>
+        ) : null}
+
+        {userRole === "lecturer" || userRole === "admin" ? (
+          <View style={styles.card}>
+            <Text style={styles.cardTitle}>Review This Log</Text>
+            <TextInput
+              style={styles.textArea}
+              placeholder="Add a comment for the student (optional)..."
+              value={comment}
+              onChangeText={setComment}
+              multiline
+            />
+            <View style={styles.btnRow}>
+              <TouchableOpacity
+                style={[styles.btn, { backgroundColor: "#059669", flex: 1, marginRight: 8 }]}
+                onPress={() => handleReview(selectedLog._id, "approved")}
+                disabled={reviewing}
+              >
+                {reviewing ? <ActivityIndicator color="#fff" /> : <Text style={styles.btnText}>✓ Approve</Text>}
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.btn, { backgroundColor: "#dc2626", flex: 1 }]}
+                onPress={() => handleReview(selectedLog._id, "rejected")}
+                disabled={reviewing}
+              >
+                {reviewing ? <ActivityIndicator color="#fff" /> : <Text style={styles.btnText}>✕ Reject</Text>}
+              </TouchableOpacity>
+            </View>
+          </View>
+        ) : null}
+      </ScrollView>
+    );
+  }
+
+  // Lecturer view
+  if (userRole === "lecturer") {
+    return (
+      <View style={styles.container}>
+        <View style={styles.filterBar}>
+          {["all", "pending", "approved", "rejected"].map((f) => (
+            <TouchableOpacity
+              key={f}
+              style={[styles.filterChip, filterStatus === f && styles.filterChipActive]}
+              onPress={() => setFilterStatus(f)}
+            >
+              <Text style={[styles.filterChipText, filterStatus === f && styles.filterChipTextActive]}>
+                {f.charAt(0).toUpperCase() + f.slice(1)}
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+
+        <FlatList
+          data={filteredLogs}
+          keyExtractor={(item) => item._id}
+          contentContainerStyle={styles.listContent}
+          ListEmptyComponent={
+            <View style={styles.emptyBox}>
+              <Text style={styles.emptyIcon}>📋</Text>
+              <Text style={styles.emptyText}>No logs found</Text>
+            </View>
+          }
+          renderItem={({ item }) => (
+            <View style={styles.reviewCard}>
+              <View style={styles.reviewHeader}>
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.reviewName}>{item.studentId?.name} — Week {item.weekNumber}</Text>
+                  <Text style={styles.reviewMeta}>{item.studentId?.studentId} · {new Date(item.logDate).toDateString()}</Text>
+                 <Text style={styles.reviewCompany}>{item.internshipId?.companyName}</Text>
+                </View>
+                <View style={[styles.statusBadge, { backgroundColor: getStatusBg(item.status) }]}>
+                  <Text style={[styles.statusText, { color: getStatusColor(item.status) }]}>
+                    {item.status.toUpperCase()}
+                  </Text>
+                </View>
+              </View>
+
+              <Text style={styles.reviewBody} numberOfLines={3}>{item.logDescription}</Text>
+
+              {item.evidenceUrl ? (
+                <TouchableOpacity onPress={() => Linking.openURL(item.evidenceUrl)}>
+                  <Text style={styles.evidenceLink}>📎 View Evidence</Text>
+                </TouchableOpacity>
+              ) : null}
+
+              <TextInput
+                style={styles.commentInput}
+                placeholder="Add a comment (optional)..."
+                onChangeText={setComment}
+                multiline
+              />
+
+              <View style={styles.btnRow}>
+                <TouchableOpacity
+                  style={[styles.btn, { backgroundColor: "#059669", flex: 1, marginRight: 6 }]}
+                  onPress={() => handleReview(item._id, "approved")}
+                >
+                  <Text style={styles.btnText}>✓ Approve</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  style={[styles.btn, { backgroundColor: "#dc2626", flex: 1 }]}
+                  onPress={() => handleReview(item._id, "rejected")}
+                >
+                  <Text style={styles.btnText}>✕ Reject</Text>
+                </TouchableOpacity>
+              </View>
+            </View>
+          )}
+        />
+      </View>
+    );
+  }
+
+  // Admin view
+  if (userRole === "admin") {
+    return (
+      <View style={styles.container}>
+        <View style={styles.tabBar}>
+          <TouchableOpacity
+            style={[styles.tab, activeTab === "logs" && styles.tabActive]}
+            onPress={() => setActiveTab("logs")}
+          >
+            <Text style={[styles.tabText, activeTab === "logs" && styles.tabTextActive]}>All Logs</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.tab, activeTab === "placements" && styles.tabActive]}
+            onPress={() => setActiveTab("placements")}
+          >
+            <Text style={[styles.tabText, activeTab === "placements" && styles.tabTextActive]}>Placements</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.tab, activeTab === "risks" && styles.tabActive]}
+            onPress={() => setActiveTab("risks")}
+          >
+            <Text style={[styles.tabText, activeTab === "risks" && styles.tabTextActive]}>
+              Risk Flags {risks.length > 0 ? `(${risks.length})` : ""}
+            </Text>
+          </TouchableOpacity>
+        </View>
+
+        {activeTab === "logs" && (
+          <FlatList
+            data={logs}
+            keyExtractor={(item) => item._id}
+            contentContainerStyle={styles.listContent}
+            ListEmptyComponent={<View style={styles.emptyBox}><Text style={styles.emptyText}>No logs found</Text></View>}
+            renderItem={({ item }) => (
+              <View style={styles.reviewCard}>
+                <View style={styles.reviewHeader}>
+                  <View style={{ flex: 1 }}>
+                    <Text style={styles.reviewName}>{item.studentId?.name} — Week {item.weekNumber}</Text>
+                    <Text style={styles.reviewMeta}>{item.studentId?.studentId} · {new Date(item.logDate).toDateString()}</Text>
+                  </View>
+                  <View style={[styles.statusBadge, { backgroundColor: getStatusBg(item.status) }]}>
+                    <Text style={[styles.statusText, { color: getStatusColor(item.status) }]}>{item.status.toUpperCase()}</Text>
+                  </View>
+                </View>
+                <Text style={styles.reviewBody} numberOfLines={2}>{item.logDescription}</Text>
+              </View>
+            )}
+          />
+        )}
+
+        {activeTab === "placements" && (
+          <FlatList
+            data={placements}
+            keyExtractor={(item) => item._id}
+            contentContainerStyle={styles.listContent}
+            ListEmptyComponent={<View style={styles.emptyBox}><Text style={styles.emptyText}>No placements found</Text></View>}
+            renderItem={({ item }) => (
+              <View style={styles.reviewCard}>
+                <View style={styles.reviewHeader}>
+                  <View style={{ flex: 1 }}>
+                    <Text style={styles.reviewName}>{item.studentId?.name}</Text>
+                    <Text style={styles.reviewMeta}>{item.studentId?.studentId}</Text>
+                    <Text style={styles.reviewCompany}>{item.companyName}</Text>
+                  </View>
+                  <View style={[styles.statusBadge, { backgroundColor: item.verifiedByAdmin ? "#d1fae5" : "#fef3c7" }]}>
+                    <Text style={[styles.statusText, { color: item.verifiedByAdmin ? "#059669" : "#d97706" }]}>
+                      {item.verifiedByAdmin ? "Verified" : "Unverified"}
+                    </Text>
+                  </View>
+                </View>
+                <View style={styles.btnRow}>
+                  {!item.verifiedByAdmin && (
+                    <TouchableOpacity
+                      style={[styles.btn, { backgroundColor: "#1a56db", flex: 1, marginRight: 6 }]}
+                      onPress={() => handleVerify(item._id)}
+                    >
+                      <Text style={styles.btnText}>✓ Verify</Text>
+                    </TouchableOpacity>
+                  )}
+                  {item.companyLetterUrl ? (
+                    <TouchableOpacity
+                      style={[styles.btn, { backgroundColor: "#6b7280", flex: 1 }]}
+                      onPress={() => Linking.openURL(item.companyLetterUrl)}
+                    >
+                      <Text style={styles.btnText}>📄 View Letter</Text>
+                    </TouchableOpacity>
+                  ) : null}
+                </View>
+              </View>
+            )}
+          />
+        )}
+
+        {activeTab === "risks" && (
+          <FlatList
+            data={risks}
+            keyExtractor={(item) => item.internship._id}
+            contentContainerStyle={styles.listContent}
+            ListHeaderComponent={
+              risks.length > 0 ? (
+                <View style={styles.riskSummary}>
+                  <Text style={styles.riskSummaryTitle}>⚠️ {risks.length} student(s) need attention</Text>
+                </View>
+              ) : null
+            }
+            ListEmptyComponent={
+              <View style={styles.emptyBox}>
+                <Text style={styles.emptyIcon}>✅</Text>
+                <Text style={styles.emptyText}>No risk flags found</Text>
+              </View>
+            }
+            renderItem={({ item }) => (
+              <View style={[styles.reviewCard, { borderLeftWidth: 3, borderLeftColor: "#dc2626" }]}>
+<Text style={styles.reviewName}>{item.internship.studentId?.name}</Text>
+<Text style={styles.reviewMeta}>{item.internship.studentId?.studentId}</Text>
+<Text style={styles.reviewCompany}>{item.internship.companyName}</Text>
+                {item.risks.missingCompanyLetter && (
+                  <Text style={styles.riskFlag}>⚠ Company letter not uploaded</Text>
+                )}
+                {item.risks.consecutiveLogsMissing >= 3 && (
+                  <Text style={styles.riskFlag}>⚠ {item.risks.consecutiveLogsMissing} consecutive logs missing</Text>
+                )}
+              </View>
+            )}
+          />
+        )}
+      </View>
+    );
+  }
+
+  return (
+    <View style={styles.centered}>
+      <Text style={{ color: "#6b7280" }}>You are not authorized to view this screen</Text>
+    </View>
+  );
+};
+
+const styles = StyleSheet.create({
+  container: { flex: 1, backgroundColor: "#f0f4ff" },
+  centered: { flex: 1, justifyContent: "center", alignItems: "center" },
+  content: { padding: "5%" },
+  title: { fontSize: 20, fontWeight: "600", color: "#1a56db", marginBottom: 16 },
+  backBtn: { marginBottom: 12 },
+  backBtnText: { fontSize: 16, color: "#1a56db", fontWeight: "500" },
+  tabBar: { flexDirection: "row", backgroundColor: "#fff", borderBottomWidth: 1, borderBottomColor: "#e5e7eb" },
+  tab: { flex: 1, paddingVertical: 13, alignItems: "center", borderBottomWidth: 2, borderBottomColor: "transparent" },
+  tabActive: { borderBottomColor: "#1a56db" },
+  tabText: { fontSize: 12, fontWeight: "500", color: "#9ca3af" },
+  tabTextActive: { color: "#1a56db", fontWeight: "600" },
+  filterBar: { flexDirection: "row", padding: 12, backgroundColor: "#fff", borderBottomWidth: 1, borderBottomColor: "#e5e7eb", gap: 8 },
+  filterChip: { paddingHorizontal: 12, paddingVertical: 6, borderRadius: 20, borderWidth: 1, borderColor: "#e5e7eb", backgroundColor: "#fff" },
+  filterChipActive: { backgroundColor: "#1a56db", borderColor: "#1a56db" },
+  filterChipText: { fontSize: 12, color: "#6b7280" },
+  filterChipTextActive: { color: "#fff", fontWeight: "500" },
+  listContent: { padding: "5%" },
+  reviewCard: { backgroundColor: "#fff", borderRadius: 10, padding: 14, marginBottom: 12, borderWidth: 1, borderColor: "#e5e7eb" },
+  reviewHeader: { flexDirection: "row", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 8 },
+  reviewName: { fontSize: 14, fontWeight: "600", color: "#111827" },
+  reviewMeta: { fontSize: 11, color: "#9ca3af", marginTop: 2 },
+  reviewCompany: { fontSize: 11, color: "#1a56db", marginTop: 2 },
+  reviewBody: { fontSize: 13, color: "#4b5563", lineHeight: 20, marginBottom: 10 },
+  evidenceLink: { fontSize: 12, color: "#1a56db", marginBottom: 10 },
+  commentInput: { backgroundColor: "#f9fafb", borderWidth: 1, borderColor: "#e5e7eb", borderRadius: 8, padding: 10, fontSize: 12, marginBottom: 10, minHeight: 60, textAlignVertical: "top" },
+  card: { backgroundColor: "#fff", borderRadius: 12, padding: 16, marginBottom: 14, borderWidth: 1, borderColor: "#e5e7eb" },
+  cardTitle: { fontSize: 13, fontWeight: "600", color: "#1a56db", marginBottom: 12, paddingBottom: 8, borderBottomWidth: 1, borderBottomColor: "#f3f4f6" },
+  fieldLabel: { fontSize: 11, fontWeight: "600", color: "#9ca3af", textTransform: "uppercase", letterSpacing: 0.4, marginBottom: 3 },
+  fieldValue: { fontSize: 14, color: "#111827", marginBottom: 10 },
+  statusBadge: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 20, alignSelf: "flex-start" },
+  statusText: { fontSize: 10, fontWeight: "600" },
+  evidenceBtn: { backgroundColor: "#e8f0fe", borderRadius: 8, padding: 12, alignItems: "center", marginBottom: 14 },
+  evidenceBtnText: { color: "#1a56db", fontSize: 13, fontWeight: "500" },
+  commentCard: { backgroundColor: "#f0f4ff", borderRadius: 10, padding: 14, marginBottom: 14, borderLeftWidth: 3, borderLeftColor: "#1a56db" },
+  commentLabel: { fontSize: 11, fontWeight: "600", color: "#1a56db", marginBottom: 6 },
+  commentText: { fontSize: 13, color: "#374151", lineHeight: 20 },
+  commentDate: { fontSize: 10, color: "#9ca3af", marginTop: 6 },
+  textArea: { backgroundColor: "#f9fafb", borderWidth: 1, borderColor: "#e5e7eb", borderRadius: 8, padding: 10, fontSize: 13, minHeight: 80, textAlignVertical: "top", marginBottom: 12 },
+  btnRow: { flexDirection: "row" },
+  btn: { padding: 12, borderRadius: 8, alignItems: "center" },
+  btnText: { color: "#fff", fontSize: 13, fontWeight: "600" },
+  emptyBox: { alignItems: "center", paddingVertical: 40 },
+  emptyIcon: { fontSize: 40, marginBottom: 10 },
+  emptyText: { fontSize: 14, color: "#6b7280" },
+  riskSummary: { backgroundColor: "#fee2e2", borderRadius: 8, padding: 12, marginBottom: 12 },
+  riskSummaryTitle: { fontSize: 13, fontWeight: "600", color: "#dc2626" },
+  riskFlag: { fontSize: 12, color: "#dc2626", marginTop: 4 },
+});
+export default ReviewScreen;

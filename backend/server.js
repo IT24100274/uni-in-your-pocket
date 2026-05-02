@@ -30,6 +30,8 @@ app.use("/api/notices", require("./routes/noticeRoutes"));
 //Mahdhi's ticket routes
 app.use("/api/tickets", require("./routes/ticketRoutes"));
 
+// Start server
+
 const PORT = process.env.PORT || 5000;
 
 app.listen(PORT, () => {

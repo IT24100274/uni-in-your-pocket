@@ -1,17 +1,27 @@
 const mongoose = require("mongoose");
 
-// Placement Schema
-// This stores the internship placement details for each student
-const placementSchema = new mongoose.Schema(
+/*
+ * Internship Schema
+ * Stores internship placement details for each student.
+ * Students create one placement record with company, supervisor, and date info.
+ * Admins verify placements and lecturers review weekly logs.
+ * courseId links this placement to a specific course from the Course module (M2).
+ * Milestones track mid-term and final progress within the placement.
+ * timelineStatus tracks the overall placement journey from submitted to completed.
+ */
+
+const internshipSchema = new mongoose.Schema(
   {
-    // Reference to the student who owns this placement
     studentId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
       required: true,
     },
-
-    // Company details
+    courseId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Course",
+      default: null,
+    },
     companyName: {
       type: String,
       required: [true, "Company name is required"],
@@ -22,8 +32,6 @@ const placementSchema = new mongoose.Schema(
       required: [true, "Company address is required"],
       trim: true,
     },
-
-    // Supervisor details
     supervisorName: {
       type: String,
       required: [true, "Supervisor name is required"],
@@ -35,8 +43,6 @@ const placementSchema = new mongoose.Schema(
       trim: true,
       lowercase: true,
     },
-
-    // Internship duration
     startDate: {
       type: Date,
       required: [true, "Start date is required"],
@@ -45,46 +51,29 @@ const placementSchema = new mongoose.Schema(
       type: Date,
       required: [true, "End date is required"],
     },
-
-    // Company letter file uploaded to Cloudinary
     companyLetterUrl: {
       type: String,
       default: "",
     },
-
-    // Admin verifies the placement (true = verified)
     verifiedByAdmin: {
       type: Boolean,
       default: false,
     },
-
-    // Overall placement status
-    // pending   = submitted, waiting for admin
-    // active    = verified and ongoing
-    // completed = internship finished
-    // rejected  = admin rejected
     status: {
       type: String,
       enum: ["pending", "active", "completed", "rejected"],
       default: "pending",
     },
-
-    // Placement status timeline steps
-    // This tracks which stage the placement is at
     timelineStatus: {
       type: String,
       enum: ["submitted", "verified", "active", "completed"],
       default: "submitted",
     },
-
-    // Mid-term milestone status
     midTermStatus: {
       type: String,
       enum: ["not_started", "in_progress", "completed"],
       default: "not_started",
     },
-
-    // Final milestone status
     finalStatus: {
       type: String,
       enum: ["not_started", "in_progress", "completed"],
@@ -92,9 +81,8 @@ const placementSchema = new mongoose.Schema(
     },
   },
   {
-    // Automatically adds createdAt and updatedAt
     timestamps: true,
   }
 );
 
-module.exports = mongoose.model("Placement", placementSchema);
+module.exports = mongoose.model("Internship", internshipSchema);

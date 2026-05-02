@@ -7,6 +7,9 @@ import {
   TouchableOpacity,
   ActivityIndicator,
   Alert,
+  Image,
+  Linking,
+  Share,
 } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import api from "../../services/api";
@@ -102,6 +105,12 @@ const CourseDetailScreen = ({ route, navigation }) => {
     <ScrollView style={styles.container}>
       {/* Course header */}
       <View style={styles.header}>
+        {course.bannerUrl && (
+          <Image
+            source={{ uri: course.bannerUrl }}
+            style={{ width: "100%", height: 180 }}
+          />
+        )}
         <Text style={styles.courseCode}>{course.courseCode}</Text>
         <Text style={styles.courseTitle}>{course.title}</Text>
         <Text style={styles.courseMeta}>
@@ -130,7 +139,17 @@ const CourseDetailScreen = ({ route, navigation }) => {
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Downloads</Text>
           {course.syllabusUrl && (
-            <TouchableOpacity style={styles.downloadBtn}>
+            <TouchableOpacity
+              style={styles.downloadBtn}
+              onPress={() => {
+                if (course.syllabusUrl) {
+                  const viewerUrl = 'https://drive.google.com/viewerng/viewer?embedded=true&url=' + encodeURIComponent(course.syllabusUrl);
+                  Linking.openURL(viewerUrl);
+                } else {
+                  Alert.alert("No syllabus uploaded yet");
+                }
+              }}
+            >
               <Text style={styles.downloadBtnText}>Syllabus PDF</Text>
             </TouchableOpacity>
           )}
@@ -140,7 +159,7 @@ const CourseDetailScreen = ({ route, navigation }) => {
       {/* Action buttons based on role */}
 
       {/* Student — show enroll button or status */}
-      {userRole === "student" && (
+      {(userRole === "student" || userRole === "lecturer") && (
         <View style={styles.section}>
           {enrollmentStatus === "approved" && (
             <View style={styles.statusBox}>

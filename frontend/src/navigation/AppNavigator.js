@@ -8,6 +8,10 @@ import LoginScreen from "../screens/LoginScreen";
 import RegisterScreen from "../screens/RegisterScreen";
 import DashboardScreen from "../screens/DashboardScreen";
 
+import NoticeListScreen from "../screens/notices/NoticeListScreen";
+import NoticeDetailScreen from "../screens/notices/NoticeDetailScreen";
+import CreateNoticeScreen from "../screens/notices/CreateNoticeScreen";
+
 // Course screens
 import CourseListScreen from "../screens/courses/CourseListScreen";
 import CourseDetailScreen from "../screens/courses/CourseDetailScreen";
@@ -24,6 +28,12 @@ import AssignmentDetailScreen from "../screens/assignments/AssignmentDetailScree
 import CreateAssignmentScreen from "../screens/assignments/CreateAssignmentScreen";
 import SubmitAssignmentScreen from "../screens/assignments/SubmitAssignmentScreen";
 import SubmissionsListScreen from "../screens/assignments/SubmissionsListScreen";
+// Mahdhi Ticket screens
+import TicketsScreen from "../screens/tickets/TicketsScreen";
+import RaiseTicketScreen from "../screens/tickets/RaiseTicketScreen";
+import TicketDetailScreen from "../screens/tickets/TicketDetailScreen";
+import ManageTicketsScreen from "../screens/tickets/ManageTicketsScreen";
+import ForwardedTicketsScreen from "../screens/tickets/ForwardedTicketsScreen";
 
 const Stack = createNativeStackNavigator();
 
@@ -98,6 +108,23 @@ const AppNavigator = () => {
           options={{ headerShown: true, title: "My Courses" }}
         />
 
+        <Stack.Screen 
+        name="NoticeList" 
+        component={NoticeListScreen} 
+        options={{ headerShown: true, title: "Notices & Events" }} 
+        />
+
+        <Stack.Screen
+         name="NoticeDetail" 
+         component={NoticeDetailScreen} 
+         options={{ headerShown: true, title: "Notice" }} 
+         />
+        <Stack.Screen 
+        name="CreateNotice" 
+        component={CreateNoticeScreen} 
+        options={{ headerShown: true, title: "New Notice" }} 
+        />
+
         {/* Enrollment screens */}
         <Stack.Screen
           name="MyEnrollments"
@@ -136,6 +163,9 @@ const AppNavigator = () => {
   component={SubmissionsListScreen}
   options={{ headerShown: true, title: "Submissions" }}
 />
+        {/* Mahdhi Ticket screens */}
+        <Stack.Screen name="TicketDetail" component={TicketDetailScreen} options={{ headerShown: true, title: "Ticket Details" }} />
+        <Stack.Screen name="RaiseTicket" component={RaiseTicketScreen} options={{ headerShown: true, title: "Raise a Ticket" }} />
 
       </Stack.Navigator>
     </NavigationContainer>

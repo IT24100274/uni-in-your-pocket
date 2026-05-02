@@ -5,6 +5,8 @@ import Ionicons from "@expo/vector-icons/Ionicons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import AssignmentListScreen from "./assignments/AssignmentListScreen";
 
+import NoticeListScreen from "./notices/NoticeListScreen";
+
 // Existing tab screens
 import HomeScreen from "./tabs/HomeScreen";
 import SettingsScreen from "./tabs/SettingsScreen";
@@ -15,6 +17,11 @@ import CourseListScreen from "./courses/CourseListScreen";
 import MyCoursesScreen from "./courses/MyCoursesScreen";
 import MyEnrollmentsScreen from "./enrollments/MyEnrollmentsScreen";
 import ManageEnrollmentsScreen from "./enrollments/ManageEnrollmentsScreen";
+
+// Ticket screens used as tabs
+import TicketsScreen from "./tickets/TicketsScreen";
+import ManageTicketsScreen from "./tickets/ManageTicketsScreen";
+import ForwardedTicketsScreen from "./tickets/ForwardedTicketsScreen";
 
 const Tab = createBottomTabNavigator();
 
@@ -89,6 +96,31 @@ const DashboardScreen = () => {
     ),
   }}
 />
+      <Tab.Screen
+        name="Notices"
+        component={NoticeListScreen}
+        options={{
+          tabBarLabel: "Notices",
+          tabBarIcon: ({ color, size }) => (
+            <Ionicons name="megaphone-outline" color={color} size={size} />
+          ),
+        }}
+      />
+
+      {/* Student and rep see My Tickets tab */}
+      {(userRole === "student" ||
+        userRole === "student_representative") && (
+        <Tab.Screen
+          name="MyTickets"
+          component={TicketsScreen}
+          options={{
+            tabBarLabel: "My Tickets",
+            tabBarIcon: ({ color, size }) => (
+              <Ionicons name="ticket-outline" color={color} size={size} />
+            ),
+          }}
+        />
+      )}
 
       {/* Student sees My Enrollments tab */}
       {(userRole === "student" ||
@@ -119,6 +151,13 @@ const DashboardScreen = () => {
         />
       )}
 
+      {/* Forwarded Tickets — lecturer */}
+      {userRole === "lecturer" && (
+        <Tab.Screen name="ForwardedTickets" component={ForwardedTicketsScreen}
+          options={{ tabBarLabel: "Tickets", tabBarIcon: ({ color, size }) => <Ionicons name="mail-unread-outline" color={color} size={size} /> }}
+        />
+      )}
+
       {/* Admin sees Manage Enrollments tab */}
       {userRole === "admin" && (
         <Tab.Screen
@@ -130,6 +169,13 @@ const DashboardScreen = () => {
               <Ionicons name="checkmark-circle-outline" color={color} size={size} />
             ),
           }}
+        />
+      )}
+
+      {/* Manage Tickets — admin and rep */}
+      {(userRole === "admin" || userRole === "student_representative") && (
+        <Tab.Screen name="ManageTickets" component={ManageTicketsScreen}
+          options={{ tabBarLabel: "Tickets", tabBarIcon: ({ color, size }) => <Ionicons name="ticket-outline" color={color} size={size} /> }}
         />
       )}
 

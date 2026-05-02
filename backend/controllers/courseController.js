@@ -32,7 +32,8 @@ const createCourse = async (req, res) => {
     if (req.files && req.files.syllabus) {
       const result = await uploadToCloudinary(
         req.files.syllabus[0].buffer,
-        "uni-pocket/courses/syllabus"
+        "uni-pocket/courses/syllabus",
+        "raw"
       );
       syllabusUrl = result.secure_url;
     }
@@ -148,7 +149,8 @@ const updateCourse = async (req, res) => {
     if (req.files && req.files.syllabus) {
       const result = await uploadToCloudinary(
         req.files.syllabus[0].buffer,
-        "uni-pocket/courses/syllabus"
+        "uni-pocket/courses/syllabus",
+        "raw"
       );
       req.body.syllabusUrl = result.secure_url;
     }

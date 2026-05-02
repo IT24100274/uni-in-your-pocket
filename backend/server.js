@@ -25,6 +25,10 @@ app.use("/api/auth", require("./routes/authRoutes"));
 app.use("/api/courses", require("./routes/courseRoutes"));
 app.use("/api/enrollments", require("./routes/enrollmentRoutes"));
 app.use("/api/assignments", require("./routes/assignmentRoutes"));
+app.use("/api/notices", require("./routes/noticeRoutes"));
+
+//Mahdhi's ticket routes
+app.use("/api/tickets", require("./routes/ticketRoutes"));
 
 const PORT = process.env.PORT || 5000;
 

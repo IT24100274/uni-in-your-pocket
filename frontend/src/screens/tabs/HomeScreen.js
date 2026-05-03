@@ -6,10 +6,12 @@ import {
   ActivityIndicator,
   Alert,
   ScrollView,
+  TouchableOpacity,
 } from "react-native";
 import { getMe } from "../../services/api";
+import Ionicons from "@expo/vector-icons/Ionicons";
 
-const HomeScreen = () => {
+const HomeScreen = ({ navigation }) => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
 
@@ -37,13 +39,54 @@ const HomeScreen = () => {
     );
   }
 
+  const quickActions = [
+    { label: "Courses", icon: "book-outline", route: "Courses" },
+    { label: "Assignments", icon: "document-text-outline", route: "Assignments" },
+    { label: "Notices", icon: "megaphone-outline", route: "Notices" },
+  ];
+
+ if (user?.role === "student" || user?.role === "student_representative") {
+    quickActions.push({ label: "My Tickets", icon: "ticket-outline", route: "MyTickets" });
+    quickActions.push({ label: "Internship", icon: "briefcase-outline", route: "MyInternship" });
+  }
+
+  if (user?.role === "lecturer") {
+    quickActions.push({ label: "My Courses", icon: "library-outline", route: "MyCourses" });
+    quickActions.push({ label: "Review Internships", icon: "clipboard-outline", route: "ReviewInternships" });
+  }
+
+  if (user?.role === "admin") {
+    quickActions.push({ label: "Review Internships", icon: "clipboard-outline", route: "ReviewInternships" });
+  }
+
   return (
-    <ScrollView style={styles.container}>
+    <ScrollView style={styles.container} contentContainerStyle={styles.content}>
       <View style={styles.headerContainer}>
         <Text style={styles.welcomeText}>Welcome back,</Text>
         <Text style={styles.nameText}>{user?.name}</Text>
         <View style={styles.roleBadge}>
           <Text style={styles.roleText}>{user?.role}</Text>
+        </View>
+      </View>
+
+      <View style={styles.quickActionsContainer}>
+        <View style={styles.sectionHeader}>
+          <Text style={styles.sectionTitle}>Quick Actions</Text>
+          <Text style={styles.sectionHint}>Jump into common tasks</Text>
+        </View>
+        <View style={styles.quickGrid}>
+          {quickActions.map((action) => (
+            <TouchableOpacity
+              key={action.route}
+              style={styles.quickCard}
+              onPress={() => navigation.navigate(action.route)}
+            >
+              <View style={styles.quickIconWrap}>
+                <Ionicons name={action.icon} size={20} color="#1a73e8" />
+              </View>
+              <Text style={styles.quickLabel}>{action.label}</Text>
+            </TouchableOpacity>
+          ))}
         </View>
       </View>
 
@@ -91,6 +134,8 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: "#f5f5f5",
+  },
+  content: {
     padding: "5%",
   },
   loadingContainer: {
@@ -142,11 +187,52 @@ const styles = StyleSheet.create({
     shadowRadius: 8,
     elevation: 4,
   },
+  quickActionsContainer: {
+    marginBottom: "6%",
+  },
+  sectionHeader: {
+    marginBottom: 12,
+  },
   sectionTitle: {
     fontSize: 18,
     fontWeight: "bold",
     color: "#333",
-    marginBottom: 16,
+  },
+  sectionHint: {
+    fontSize: 13,
+    color: "#777",
+    marginTop: 4,
+  },
+  quickGrid: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 12,
+  },
+  quickCard: {
+    width: "48%",
+    backgroundColor: "#ffffff",
+    borderRadius: 12,
+    paddingVertical: 16,
+    paddingHorizontal: 14,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.08,
+    shadowRadius: 4,
+    elevation: 2,
+  },
+  quickIconWrap: {
+    width: 34,
+    height: 34,
+    borderRadius: 17,
+    backgroundColor: "#e8f0fe",
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: 10,
+  },
+  quickLabel: {
+    fontSize: 14,
+    fontWeight: "600",
+    color: "#333",
   },
   infoRow: {
     paddingVertical: 12,

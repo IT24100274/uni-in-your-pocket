@@ -8,6 +8,10 @@ import LoginScreen from "../screens/LoginScreen";
 import RegisterScreen from "../screens/RegisterScreen";
 import DashboardScreen from "../screens/DashboardScreen";
 
+import NoticeListScreen from "../screens/notices/NoticeListScreen";
+import NoticeDetailScreen from "../screens/notices/NoticeDetailScreen";
+import CreateNoticeScreen from "../screens/notices/CreateNoticeScreen";
+
 // Course screens
 import CourseListScreen from "../screens/courses/CourseListScreen";
 import CourseDetailScreen from "../screens/courses/CourseDetailScreen";
@@ -18,6 +22,29 @@ import MyCoursesScreen from "../screens/courses/MyCoursesScreen";
 // Enrollment screens
 import MyEnrollmentsScreen from "../screens/enrollments/MyEnrollmentsScreen";
 import ManageEnrollmentsScreen from "../screens/enrollments/ManageEnrollmentsScreen";
+
+import AssignmentListScreen from "../screens/assignments/AssignmentListScreen";
+import AssignmentDetailScreen from "../screens/assignments/AssignmentDetailScreen";
+import CreateAssignmentScreen from "../screens/assignments/CreateAssignmentScreen";
+import SubmitAssignmentScreen from "../screens/assignments/SubmitAssignmentScreen";
+import SubmissionsListScreen from "../screens/assignments/SubmissionsListScreen";
+// Mahdhi Ticket screens
+import TicketsScreen from "../screens/tickets/TicketsScreen";
+import RaiseTicketScreen from "../screens/tickets/RaiseTicketScreen";
+import TicketDetailScreen from "../screens/tickets/TicketDetailScreen";
+import ManageTicketsScreen from "../screens/tickets/ManageTicketsScreen";
+import ForwardedTicketsScreen from "../screens/tickets/ForwardedTicketsScreen";
+
+// Sathya — Marks & Results drill-down screens
+import EnterMarksScreen from "../screens/marks/EnterMarksScreen";
+import ResultDetailScreen from "../screens/marks/ResultDetailScreen";
+
+// Mo's internship screens
+import InternshipScreen from "../screens/internship/InternshipScreen";
+import CreateInternshipScreen from "../screens/internship/CreateInternshipScreen";
+import LogScreen from "../screens/internship/LogScreen";
+import ProgressDashboardScreen from "../screens/internship/ProgressDashboardScreen";
+import ReviewScreen from "../screens/internship/ReviewScreen";
 
 const Stack = createNativeStackNavigator();
 
@@ -92,6 +119,23 @@ const AppNavigator = () => {
           options={{ headerShown: true, title: "My Courses" }}
         />
 
+        <Stack.Screen 
+        name="NoticeList" 
+        component={NoticeListScreen} 
+        options={{ headerShown: true, title: "Notices & Events" }} 
+        />
+
+        <Stack.Screen
+         name="NoticeDetail" 
+         component={NoticeDetailScreen} 
+         options={{ headerShown: true, title: "Notice" }} 
+         />
+        <Stack.Screen 
+        name="CreateNotice" 
+        component={CreateNoticeScreen} 
+        options={{ headerShown: true, title: "New Notice" }} 
+        />
+
         {/* Enrollment screens */}
         <Stack.Screen
           name="MyEnrollments"
@@ -103,6 +147,74 @@ const AppNavigator = () => {
           component={ManageEnrollmentsScreen}
           options={{ headerShown: true, title: "Manage Enrollments" }}
         />
+
+        {/* Assignment screens */}
+<Stack.Screen
+  name="AssignmentList"
+  component={AssignmentListScreen}
+  options={{ headerShown: true, title: "Assignments" }}
+/>
+<Stack.Screen
+  name="AssignmentDetail"
+  component={AssignmentDetailScreen}
+  options={{ headerShown: true, title: "Assignment Details" }}
+/>
+<Stack.Screen
+  name="CreateAssignment"
+  component={CreateAssignmentScreen}
+  options={{ headerShown: true, title: "Create Assignment" }}
+/>
+<Stack.Screen
+  name="SubmitAssignment"
+  component={SubmitAssignmentScreen}
+  options={{ headerShown: true, title: "Submit Assignment" }}
+/>
+<Stack.Screen
+  name="SubmissionsList"
+  component={SubmissionsListScreen}
+  options={{ headerShown: true, title: "Submissions" }}
+/>
+        {/* Mahdhi Ticket screens */}
+        <Stack.Screen name="TicketDetail" component={TicketDetailScreen} options={{ headerShown: true, title: "Ticket Details" }} />
+        <Stack.Screen name="RaiseTicket" component={RaiseTicketScreen} options={{ headerShown: true, title: "Raise a Ticket" }} />
+
+        {/* Sathya — Marks & Results drill-down screens */}
+        <Stack.Screen
+          name="EnterMarks"
+          component={EnterMarksScreen}
+          options={{ headerShown: true, title: "Enter Marks" }}
+        />
+        <Stack.Screen
+          name="ResultDetail"
+          component={ResultDetailScreen}
+          options={{ headerShown: true, title: "Result Details" }}
+        />
+{/* Internship screens */}
+<Stack.Screen
+  name="MyInternship"
+  component={InternshipScreen}
+  options={{ headerShown: true, title: "My Internship" }}
+/>
+<Stack.Screen
+  name="CreateInternship"
+  component={CreateInternshipScreen}
+  options={{ headerShown: true, title: "Create Internship" }}
+/>
+<Stack.Screen
+  name="InternshipLog"
+  component={LogScreen}
+  options={{ headerShown: true, title: "Weekly Log" }}
+/>
+<Stack.Screen
+  name="InternshipProgress"
+  component={ProgressDashboardScreen}
+  options={{ headerShown: true, title: "Progress Dashboard" }}
+/>
+<Stack.Screen
+  name="ReviewInternships"
+  component={ReviewScreen}
+  options={{ headerShown: true, title: "Review Internships" }}
+/>
       </Stack.Navigator>
     </NavigationContainer>
   );

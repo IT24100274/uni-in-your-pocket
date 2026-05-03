@@ -9,7 +9,7 @@ import api from "../../services/api";
 
 /*
  * LogScreen — Student
- * Handles two functions via tab switching:
+ * Handles two functions viia tab switching:
  * 1. Log History — shows all submitted logs with status badges.
  *    Rejected logs show lecturer comment inline.
  *    Missing weeks are highlighted in amber.

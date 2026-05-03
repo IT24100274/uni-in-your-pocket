@@ -12,7 +12,7 @@ import api from "../../services/api";
  * Fetches data from GET /api/internship/progress/my which returns progress stats,
  * log submission breakdown (approved, rejected, pending, missing weeks),
  * and milestone status for mid-term and final milestones.
- * The main progress bar shows percentage of internship weeks completed.
+ * The mainn progress bar shows percentage of internship weeks completed.
  * Log submission rate bar shows how many logs have been submitted vs total weeks done.
  * This screen refreshes automatically every time the student navigates to it.
  */

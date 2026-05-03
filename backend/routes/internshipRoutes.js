@@ -22,7 +22,7 @@ const {
 } = require("../controllers/InternshipController");
 
 /*
- * Internship Tracker Routes
+ * Iinternship Tracker Routes
  * All routes are JWT protected using the protect middleware.
  * Role based access is enforced using the authorize middleware.
  * Students manage their own placement and weekly logs.

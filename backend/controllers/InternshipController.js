@@ -1,5 +1,6 @@
 const Internship = require("../models/Internship");
 const InternshipLog = require("../models/InternshipLog");
+const { uploadToCloudinary } = require("../config/cloudinary");
 
 /*
  * Internship Controller
@@ -10,6 +11,21 @@ const InternshipLog = require("../models/InternshipLog");
  * All routes are role-protected using the auth middleware.
  */
 
+const uploadInternshipFile = async (file, folder) => {
+  if (!file) return "";
+  const originalName = file.originalname || file.name || "";
+  const isPdf =
+    file.mimetype === "application/pdf" ||
+    originalName.toLowerCase().endsWith(".pdf");
+  const resourceType = isPdf ? "raw" : "image";
+  const buffer = file.buffer;
+  if (!buffer) {
+    throw new Error("Uploaded file buffer is missing");
+  }
+  const result = await uploadToCloudinary(buffer, folder, resourceType);
+  return result.secure_url;
+};
+
 const createInternship = async (req, res) => {
   try {
     const existing = await Internship.findOne({ studentId: req.user._id });
@@ -17,7 +33,9 @@ const createInternship = async (req, res) => {
       return res.status(400).json({ message: "You already have an internship" });
     }
     const { companyName, companyAddress, supervisorName, supervisorEmail, startDate, endDate, courseId } = req.body;
-    const companyLetterUrl = req.file ? req.file.path : "";
+    const companyLetterUrl = req.file
+      ? await uploadInternshipFile(req.file, "uni-pocket/internships/companyLetters")
+      : "";
     const internship = await Internship.create({
       studentId: req.user._id,
       companyName,
@@ -81,7 +99,9 @@ const updateInternship = async (req, res) => {
     if (startDate) internship.startDate = startDate;
     if (endDate) internship.endDate = endDate;
     if (courseId) internship.courseId = courseId;
-    if (req.file) internship.companyLetterUrl = req.file.path;
+    if (req.file) {
+      internship.companyLetterUrl = await uploadInternshipFile(req.file, "uni-pocket/internships/companyLetters");
+    }
     await internship.save();
     res.status(200).json({ message: "Internship updated successfully", internship });
   } catch (error) {
@@ -201,7 +221,9 @@ const submitLog = async (req, res) => {
       return res.status(400).json({ message: `You already submitted a log for week ${req.body.weekNumber}` });
     }
     const { weekNumber, logDate, logDescription, tasksCompleted, category } = req.body;
-    const evidenceUrl = req.file ? req.file.path : "";
+    const evidenceUrl = req.file
+      ? await uploadInternshipFile(req.file, "uni-pocket/internships/logEvidence")
+      : "";
     const log = await InternshipLog.create({
       internshipId: internship._id,
       studentId: req.user._id,

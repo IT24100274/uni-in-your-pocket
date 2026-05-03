@@ -52,6 +52,8 @@ setPlacements(placementsRes.data.internships || []);
       if (route?.params?.logId && route?.params?.mode === "detail") {
         const logRes = await api.get(`/internship/logs/${route.params.logId}`);
         setSelectedLog(logRes.data.log);
+      } else {
+        setSelectedLog(null);
       }
     } catch (error) {
       Alert.alert("Error", "Could not load data");
@@ -97,6 +99,32 @@ setPlacements(placementsRes.data.internships || []);
     return colors[status] || "#f3f4f6";
   };
 
+  const isPdfUrl = (url) => {
+    if (!url) return false;
+    const lower = url.toLowerCase();
+    return lower.endsWith(".pdf") || lower.includes("/raw/upload/");
+  };
+
+  const getPdfViewUrl = (url) => {
+    if (!url) return url;
+    return `https://drive.google.com/viewerng/viewer?embedded=true&url=${encodeURIComponent(url)}`;
+  };
+
+  const openAttachment = async (url) => {
+    if (!url) return;
+    try {
+      const target = isPdfUrl(url) ? getPdfViewUrl(url) : url;
+      const canOpen = await Linking.canOpenURL(target);
+      if (canOpen) {
+        await Linking.openURL(target);
+      } else {
+        Alert.alert("Unable to open file", "Your device cannot open this attachment.");
+      }
+    } catch (error) {
+      Alert.alert("Error", "Unable to open attachment.");
+    }
+  };
+
   const filteredLogs = filterStatus === "all" ? logs : logs.filter(l => l.status === filterStatus);
 
   if (loading) {
@@ -138,7 +166,7 @@ setPlacements(placementsRes.data.internships || []);
         </View>
 
         {selectedLog.evidenceUrl ? (
-          <TouchableOpacity style={styles.evidenceBtn} onPress={() => Linking.openURL(selectedLog.evidenceUrl)}>
+          <TouchableOpacity style={styles.evidenceBtn} onPress={() => openAttachment(selectedLog.evidenceUrl)}>
             <Text style={styles.evidenceBtnText}>📎 View Uploaded Evidence</Text>
           </TouchableOpacity>
         ) : null}
@@ -155,7 +183,7 @@ setPlacements(placementsRes.data.internships || []);
           </View>
         ) : null}
 
-        {userRole === "lecturer" || userRole === "admin" ? (
+        {(userRole === "lecturer" || userRole === "admin") && selectedLog.status === "pending" ? (
           <View style={styles.card}>
             <Text style={styles.cardTitle}>Review This Log</Text>
             <TextInput
@@ -233,32 +261,36 @@ setPlacements(placementsRes.data.internships || []);
               <Text style={styles.reviewBody} numberOfLines={3}>{item.logDescription}</Text>
 
               {item.evidenceUrl ? (
-                <TouchableOpacity onPress={() => Linking.openURL(item.evidenceUrl)}>
+                <TouchableOpacity onPress={() => openAttachment(item.evidenceUrl)}>
                   <Text style={styles.evidenceLink}>📎 View Evidence</Text>
                 </TouchableOpacity>
               ) : null}
 
-              <TextInput
-                style={styles.commentInput}
-                placeholder="Add a comment (optional)..."
-                onChangeText={setComment}
-                multiline
-              />
+              {item.status === "pending" ? (
+                <>
+                  <TextInput
+                    style={styles.commentInput}
+                    placeholder="Add a comment (optional)..."
+                    onChangeText={setComment}
+                    multiline
+                  />
 
-              <View style={styles.btnRow}>
-                <TouchableOpacity
-                  style={[styles.btn, { backgroundColor: "#059669", flex: 1, marginRight: 6 }]}
-                  onPress={() => handleReview(item._id, "approved")}
-                >
-                  <Text style={styles.btnText}>✓ Approve</Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  style={[styles.btn, { backgroundColor: "#dc2626", flex: 1 }]}
-                  onPress={() => handleReview(item._id, "rejected")}
-                >
-                  <Text style={styles.btnText}>✕ Reject</Text>
-                </TouchableOpacity>
-              </View>
+                  <View style={styles.btnRow}>
+                    <TouchableOpacity
+                      style={[styles.btn, { backgroundColor: "#059669", flex: 1, marginRight: 6 }]}
+                      onPress={() => handleReview(item._id, "approved")}
+                    >
+                      <Text style={styles.btnText}>✓ Approve</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                      style={[styles.btn, { backgroundColor: "#dc2626", flex: 1 }]}
+                      onPress={() => handleReview(item._id, "rejected")}
+                    >
+                      <Text style={styles.btnText}>✕ Reject</Text>
+                    </TouchableOpacity>
+                  </View>
+                </>
+              ) : null}
             </View>
           )}
         />
@@ -348,7 +380,7 @@ setPlacements(placementsRes.data.internships || []);
                   {item.companyLetterUrl ? (
                     <TouchableOpacity
                       style={[styles.btn, { backgroundColor: "#6b7280", flex: 1 }]}
-                      onPress={() => Linking.openURL(item.companyLetterUrl)}
+                      onPress={() => openAttachment(item.companyLetterUrl)}
                     >
                       <Text style={styles.btnText}>📄 View Letter</Text>
                     </TouchableOpacity>

@@ -5,7 +5,7 @@ const mongoose = require("mongoose");
  * Stores weekly progress logs submitted by students during their internship.
  * Each log belongs to a specific internship via internshipId.
  * Lecturers approve or reject logs and leave comments for students.
- * Evidence files are uploaded to Cloudinary via the upload middleware.
+ * Evidence files are uploaded to Cloudinary viia the upload middleware.
  * Status lifecycle: pending → approved / rejected.
  * Students can only delete logs that are still in pending status.
  */

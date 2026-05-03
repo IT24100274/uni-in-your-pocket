@@ -14,11 +14,15 @@ const api = axios.create({
 });
 
 // Automatically attach token to every request
+// Also remove Content-Type for FormData so axios sets the multipart boundary correctly
 api.interceptors.request.use(
   async (config) => {
     const token = await AsyncStorage.getItem("token");
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
+    }
+    if (config.data instanceof FormData) {
+      delete config.headers["Content-Type"];
     }
     return config;
   },
@@ -64,5 +68,17 @@ export const getNoticeById = (id)       => api.get(`/notices/${id}`);
 export const createNotice  = (data)     => api.post("/notices", data);
 export const updateNotice  = (id, data) => api.put(`/notices/${id}`, data);
 export const deleteNotice  = (id)       => api.delete(`/notices/${id}`);
+
+// Sathya — Marks & Results API calls
+export const createResult     = (data)     => api.post("/results", data);
+export const getMyResults     = ()         => api.get("/results/my");
+export const getCourseResults = (courseId) => api.get(`/results/course/${courseId}`);
+export const updateResult     = (id, data) => api.put(`/results/${id}`, data);
+export const deleteResult     = (id)       => api.delete(`/results/${id}`);
+export const togglePublish    = (id)       => api.patch(`/results/${id}/publish`);
+export const toggleLock       = (id)       => api.patch(`/results/${id}/lock`);
+export const exportResults    = ()         => api.get("/results/export");
+export const uploadConcernFile = (id, formData) =>
+  api.post(`/results/${id}/upload`, formData);
 
 export default api;

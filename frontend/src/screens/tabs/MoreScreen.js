@@ -12,16 +12,19 @@ const MoreScreen = ({ navigation, route }) => {
   if (userRole === "student" || userRole === "student_representative") {
     items.push({ label: "My Tickets", route: "MyTickets", icon: "ticket-outline" });
     items.push({ label: "My Enrollments", route: "MyEnrollments", icon: "checkmark-circle-outline" });
+    items.push({ label: "My Results", route: "MyResults", icon: "ribbon-outline" });
   }
 
   if (userRole === "lecturer") {
     items.push({ label: "My Courses", route: "MyCourses", icon: "library-outline" });
     items.push({ label: "Forwarded Tickets", route: "ForwardedTickets", icon: "mail-unread-outline" });
+    items.push({ label: "Manage Results", route: "ManageResults", icon: "ribbon-outline" });
   }
 
   if (userRole === "admin") {
     items.push({ label: "Manage Enrollments", route: "ManageEnrollments", icon: "checkmark-circle-outline" });
     items.push({ label: "Manage Tickets", route: "ManageTickets", icon: "ticket-outline" });
+    items.push({ label: "All Results", route: "AllResults", icon: "ribbon-outline" });
     items.push({ label: "Users", route: "Users", icon: "people-outline" });
   }
 

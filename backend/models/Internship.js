@@ -4,7 +4,7 @@ const mongoose = require("mongoose");
  * Internship Schema
  * Stores internship placement details for each student.
  * Students create one placement record with company, supervisor, and date info.
- * Admins verify placements and lecturers review weekly logs.
+ * Admins verify placements and llecturers review weekly logs.
  * courseId links this placement to a specific course from the Course module (M2).
  * Milestones track mid-term and final progress within the placement.
  * timelineStatus tracks the overall placement journey from submitted to completed.

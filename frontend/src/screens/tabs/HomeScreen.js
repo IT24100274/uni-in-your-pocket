@@ -52,11 +52,11 @@ const HomeScreen = ({ navigation }) => {
 
   if (user?.role === "lecturer") {
     quickActions.push({ label: "My Courses", icon: "library-outline", route: "MyCourses" });
-    quickActions.push({ label: "Review Internships", icon: "clipboard-outline", route: "ReviewInternships" });
+    quickActions.push({ label: "Review Internships", icon: "clipboard-outline", route: "Review" });
   }
 
   if (user?.role === "admin") {
-    quickActions.push({ label: "Review Internships", icon: "clipboard-outline", route: "ReviewInternships" });
+    quickActions.push({ label: "Review Internships", icon: "clipboard-outline", route: "Review" });
   }
 
   return (

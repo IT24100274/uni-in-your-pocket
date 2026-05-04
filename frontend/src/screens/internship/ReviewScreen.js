@@ -14,6 +14,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
  * individual logs, and leave comments that students can see in their log history.
  * Admins can view all placements, verify them, view company letters, and see
  * a risk flag summary showing students with missing logs or missing company letters.
+ * Admins can also search all lecturers and assign/remove them as supervisors.
  * The screen automatically switches view based on the logged-in user's role.
  */
 
@@ -29,6 +30,13 @@ const ReviewScreen = ({ navigation, route }) => {
   const [activeTab, setActiveTab] = useState("logs");
   const [filterStatus, setFilterStatus] = useState("all");
 
+  // ── NEW STATES ──────────────────────────────────────────────────────────────
+  const [lecturers, setLecturers] = useState([]);
+  const [supervisors, setSupervisors] = useState([]);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [assigningId, setAssigningId] = useState(null);
+  // ────────────────────────────────────────────────────────────────────────────
+
   const fetchData = async () => {
     try {
       setLoading(true);
@@ -43,10 +51,17 @@ const ReviewScreen = ({ navigation, route }) => {
       }
 
       if (role === "admin") {
-const placementsRes = await api.get("/internship/admin/all");
-setPlacements(placementsRes.data.internships || []);
+        const placementsRes = await api.get("/internship/admin/all");
+        setPlacements(placementsRes.data.internships || []);
         const risksRes = await api.get("/internship/admin/risks");
         setRisks(risksRes.data.riskList);
+
+        // ── NEW: fetch lecturers & supervisors ────────────────────────────────
+        const lecsRes = await api.get("/internship/lecturers");
+        setLecturers(lecsRes.data.lecturers || []);
+        const supsRes = await api.get("/internship/supervisors");
+        setSupervisors(supsRes.data.supervisors || []);
+        // ─────────────────────────────────────────────────────────────────────
       }
 
       if (route?.params?.logId && route?.params?.mode === "detail") {
@@ -88,6 +103,58 @@ setPlacements(placementsRes.data.internships || []);
       Alert.alert("Error", "Could not verify placement");
     }
   };
+
+  const handleDeletePlacement = async (placementId) => {
+    Alert.alert(
+      "Confirm delete",
+      "Delete this placement and all related internship data?",
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Delete",
+          style: "destructive",
+          onPress: async () => {
+            try {
+              await api.delete(`/internship/${placementId}`);
+              Alert.alert("Deleted", "Placement has been removed.");
+              fetchData();
+            } catch (error) {
+              Alert.alert("Error", error.response?.data?.message || "Could not delete placement");
+            }
+          },
+        },
+      ]
+    );
+  };
+
+  const handleAssignSupervisor = async (lecturerId) => {
+    setAssigningId(lecturerId);
+    try {
+      await api.post(`/internship/supervisors/${lecturerId}`);
+      const supsRes = await api.get("/internship/supervisors");
+      setSupervisors(supsRes.data.supervisors || []);
+      Alert.alert("Success", "Supervisor assigned successfully");
+    } catch (error) {
+      Alert.alert("Error", error.response?.data?.message || "Could not assign supervisor");
+    } finally {
+      setAssigningId(null);
+    }
+  };
+
+  const handleRemoveSupervisor = async (lecturerId) => {
+    setAssigningId(lecturerId);
+    try {
+      await api.delete(`/internship/supervisors/${lecturerId}`);
+      const supsRes = await api.get("/internship/supervisors");
+      setSupervisors(supsRes.data.supervisors || []);
+      Alert.alert("Success", "Supervisor removed");
+    } catch (error) {
+      Alert.alert("Error", "Could not remove supervisor");
+    } finally {
+      setAssigningId(null);
+    }
+  };
+  // ─────────────────────────────────────────────────────────────────────────────
 
   const getStatusColor = (status) => {
     const colors = { approved: "#059669", rejected: "#dc2626", pending: "#d97706", active: "#059669" };
@@ -131,7 +198,7 @@ setPlacements(placementsRes.data.internships || []);
     return <View style={styles.centered}><ActivityIndicator size="large" color="#1a56db" /></View>;
   }
 
-  // Log detail view when student taps a log from LogScreen
+  // ── Log detail view ──────────────────────────────────────────────────────────
   if (selectedLog) {
     return (
       <ScrollView style={styles.container} contentContainerStyle={styles.content}>
@@ -146,7 +213,7 @@ setPlacements(placementsRes.data.internships || []);
           <Text style={styles.fieldLabel}>Date</Text>
           <Text style={styles.fieldValue}>{new Date(selectedLog.logDate).toDateString()}</Text>
           <Text style={styles.fieldLabel}>Category</Text>
-          <Text style={styles.fieldValue} style={{ textTransform: "capitalize" }}>{selectedLog.category}</Text>
+          <Text style={[styles.fieldValue, { textTransform: "capitalize" }]}>{selectedLog.category}</Text>
           <Text style={styles.fieldLabel}>Status</Text>
           <View style={[styles.statusBadge, { backgroundColor: getStatusBg(selectedLog.status) }]}>
             <Text style={[styles.statusText, { color: getStatusColor(selectedLog.status) }]}>
@@ -215,7 +282,7 @@ setPlacements(placementsRes.data.internships || []);
     );
   }
 
-  // Lecturer view
+  // ── Lecturer view ────────────────────────────────────────────────────────────
   if (userRole === "lecturer") {
     return (
       <View style={styles.container}>
@@ -249,7 +316,7 @@ setPlacements(placementsRes.data.internships || []);
                 <View style={{ flex: 1 }}>
                   <Text style={styles.reviewName}>{item.studentId?.name} — Week {item.weekNumber}</Text>
                   <Text style={styles.reviewMeta}>{item.studentId?.studentId} · {new Date(item.logDate).toDateString()}</Text>
-                 <Text style={styles.reviewCompany}>{item.internshipId?.companyName}</Text>
+                  <Text style={styles.reviewCompany}>{item.internshipId?.companyName}</Text>
                 </View>
                 <View style={[styles.statusBadge, { backgroundColor: getStatusBg(item.status) }]}>
                   <Text style={[styles.statusText, { color: getStatusColor(item.status) }]}>
@@ -274,7 +341,6 @@ setPlacements(placementsRes.data.internships || []);
                     onChangeText={setComment}
                     multiline
                   />
-
                   <View style={styles.btnRow}>
                     <TouchableOpacity
                       style={[styles.btn, { backgroundColor: "#059669", flex: 1, marginRight: 6 }]}
@@ -298,10 +364,11 @@ setPlacements(placementsRes.data.internships || []);
     );
   }
 
-  // Admin view
+  // ── Admin view ───────────────────────────────────────────────────────────────
   if (userRole === "admin") {
     return (
       <View style={styles.container}>
+        {/* Tab Bar — now includes Supervisors tab */}
         <View style={styles.tabBar}>
           <TouchableOpacity
             style={[styles.tab, activeTab === "logs" && styles.tabActive]}
@@ -323,8 +390,18 @@ setPlacements(placementsRes.data.internships || []);
               Risk Flags {risks.length > 0 ? `(${risks.length})` : ""}
             </Text>
           </TouchableOpacity>
+          {/* ── NEW TAB ── */}
+          <TouchableOpacity
+            style={[styles.tab, activeTab === "supervisors" && styles.tabActive]}
+            onPress={() => setActiveTab("supervisors")}
+          >
+            <Text style={[styles.tabText, activeTab === "supervisors" && styles.tabTextActive]}>
+              Supervisors
+            </Text>
+          </TouchableOpacity>
         </View>
 
+        {/* All Logs Tab */}
         {activeTab === "logs" && (
           <FlatList
             data={logs}
@@ -348,6 +425,7 @@ setPlacements(placementsRes.data.internships || []);
           />
         )}
 
+        {/* Placements Tab */}
         {activeTab === "placements" && (
           <FlatList
             data={placements}
@@ -379,18 +457,25 @@ setPlacements(placementsRes.data.internships || []);
                   )}
                   {item.companyLetterUrl ? (
                     <TouchableOpacity
-                      style={[styles.btn, { backgroundColor: "#6b7280", flex: 1 }]}
+                      style={[styles.btn, { backgroundColor: "#6b7280", flex: 1, marginRight: 6 }]}
                       onPress={() => openAttachment(item.companyLetterUrl)}
                     >
                       <Text style={styles.btnText}>📄 View Letter</Text>
                     </TouchableOpacity>
                   ) : null}
+                  <TouchableOpacity
+                    style={[styles.btn, styles.deleteBtn, { flex: 1 }]}
+                    onPress={() => handleDeletePlacement(item._id)}
+                  >
+                    <Text style={styles.btnText}>🗑️ Delete</Text>
+                  </TouchableOpacity>
                 </View>
               </View>
             )}
           />
         )}
 
+        {/* Risk Flags Tab */}
         {activeTab === "risks" && (
           <FlatList
             data={risks}
@@ -411,19 +496,108 @@ setPlacements(placementsRes.data.internships || []);
             }
             renderItem={({ item }) => (
               <View style={[styles.reviewCard, { borderLeftWidth: 3, borderLeftColor: "#dc2626" }]}>
-<Text style={styles.reviewName}>{item.internship.studentId?.name}</Text>
-<Text style={styles.reviewMeta}>{item.internship.studentId?.studentId}</Text>
-<Text style={styles.reviewCompany}>{item.internship.companyName}</Text>
+                <Text style={styles.reviewName}>{item.internship.studentId?.name}</Text>
+                <Text style={styles.reviewMeta}>{item.internship.studentId?.studentId}</Text>
+                <Text style={styles.reviewCompany}>{item.internship.companyName}</Text>
                 {item.risks.missingCompanyLetter && (
                   <Text style={styles.riskFlag}>⚠ Company letter not uploaded</Text>
                 )}
                 {item.risks.consecutiveLogsMissing >= 3 && (
                   <Text style={styles.riskFlag}>⚠ {item.risks.consecutiveLogsMissing} consecutive logs missing</Text>
                 )}
+                <View style={[styles.btnRow, { marginTop: 10 }]}> 
+                  <TouchableOpacity
+                    style={[styles.btn, styles.deleteBtn, { flex: 1 }]}
+                    onPress={() => handleDeletePlacement(item.internship._id)}
+                  >
+                    <Text style={styles.btnText}>🗑️ Delete Placement</Text>
+                  </TouchableOpacity>
+                </View>
               </View>
             )}
           />
         )}
+
+        {/* ── NEW: Supervisors Tab ──────────────────────────────────────────── */}
+        {activeTab === "supervisors" && (
+          <ScrollView contentContainerStyle={styles.listContent}>
+
+            {/* Currently Assigned Supervisors */}
+            <Text style={styles.sectionTitle}>✅ Assigned Supervisors ({supervisors.length})</Text>
+            {supervisors.length === 0 ? (
+              <View style={styles.emptyBox}>
+                <Text style={styles.emptyText}>No supervisors assigned yet</Text>
+              </View>
+            ) : (
+              supervisors.map((sup) => (
+                <View key={sup._id} style={styles.supervisorCard}>
+                  <View style={{ flex: 1 }}>
+                    <Text style={styles.reviewName}>{sup.name}</Text>
+                    <Text style={styles.reviewMeta}>{sup.department} · {sup.email}</Text>
+                  </View>
+                  <TouchableOpacity
+                    style={styles.removeBtn}
+                    onPress={() => handleRemoveSupervisor(sup._id)}
+                    disabled={assigningId === sup._id}
+                  >
+                    {assigningId === sup._id
+                      ? <ActivityIndicator size="small" color="#dc2626" />
+                      : <Text style={styles.removeBtnText}>Remove</Text>
+                    }
+                  </TouchableOpacity>
+                </View>
+              ))
+            )}
+
+            {/* Search & Assign Lecturers */}
+            <Text style={[styles.sectionTitle, { marginTop: 20 }]}>🔍 Search & Assign Lecturers</Text>
+            <TextInput
+              style={styles.searchBox}
+              placeholder="Search by name or department..."
+              value={searchQuery}
+              onChangeText={setSearchQuery}
+            />
+
+            {lecturers
+              .filter((lec) => {
+                const q = searchQuery.toLowerCase();
+                return (
+                  lec.name.toLowerCase().includes(q) ||
+                  (lec.department && lec.department.toLowerCase().includes(q))
+                );
+              })
+              .map((lec) => {
+                const isAssigned = supervisors.some((s) => s._id === lec._id);
+                return (
+                  <View key={lec._id} style={styles.supervisorCard}>
+                    <View style={{ flex: 1 }}>
+                      <Text style={styles.reviewName}>{lec.name}</Text>
+                      <Text style={styles.reviewMeta}>{lec.department} · {lec.email}</Text>
+                    </View>
+                    {isAssigned ? (
+                      <View style={styles.assignedBadge}>
+                        <Text style={styles.assignedBadgeText}>Assigned ✓</Text>
+                      </View>
+                    ) : (
+                      <TouchableOpacity
+                        style={styles.assignBtn}
+                        onPress={() => handleAssignSupervisor(lec._id)}
+                        disabled={assigningId === lec._id}
+                      >
+                        {assigningId === lec._id
+                          ? <ActivityIndicator size="small" color="#fff" />
+                          : <Text style={styles.assignBtnText}>Assign</Text>
+                        }
+                      </TouchableOpacity>
+                    )}
+                  </View>
+                );
+              })
+            }
+          </ScrollView>
+        )}
+        {/* ─────────────────────────────────────────────────────────────────── */}
+
       </View>
     );
   }
@@ -483,5 +657,73 @@ const styles = StyleSheet.create({
   riskSummary: { backgroundColor: "#fee2e2", borderRadius: 8, padding: 12, marginBottom: 12 },
   riskSummaryTitle: { fontSize: 13, fontWeight: "600", color: "#dc2626" },
   riskFlag: { fontSize: 12, color: "#dc2626", marginTop: 4 },
+
+  // ── NEW STYLES ───────────────────────────────────────────────────────────────
+  sectionTitle: {
+    fontSize: 13,
+    fontWeight: "700",
+    color: "#374151",
+    marginBottom: 10,
+  },
+  supervisorCard: {
+    backgroundColor: "#fff",
+    borderRadius: 10,
+    padding: 14,
+    marginBottom: 10,
+    flexDirection: "row",
+    alignItems: "center",
+    borderWidth: 1,
+    borderColor: "#e5e7eb",
+  },
+  searchBox: {
+    backgroundColor: "#fff",
+    borderWidth: 1,
+    borderColor: "#d1d5db",
+    borderRadius: 10,
+    padding: 12,
+    fontSize: 14,
+    marginBottom: 12,
+  },
+  assignBtn: {
+    backgroundColor: "#1a56db",
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 8,
+  },
+  deleteBtn: {
+    backgroundColor: "#dc2626",
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 8,
+  },
+  assignBtnText: {
+    color: "#fff",
+    fontSize: 12,
+    fontWeight: "600",
+  },
+  removeBtn: {
+    borderWidth: 1,
+    borderColor: "#dc2626",
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 8,
+  },
+  removeBtnText: {
+    color: "#dc2626",
+    fontSize: 12,
+    fontWeight: "600",
+  },
+  assignedBadge: {
+    backgroundColor: "#d1fae5",
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 8,
+  },
+  assignedBadgeText: {
+    color: "#059669",
+    fontSize: 12,
+    fontWeight: "600",
+  },
 });
+
 export default ReviewScreen;

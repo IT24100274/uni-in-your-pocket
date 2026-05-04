@@ -1,250 +1,305 @@
 import React, { useState, useCallback } from "react";
 import {
-  View, Text, ScrollView, StyleSheet,
-  ActivityIndicator, Alert, TouchableOpacity,
+  View, Text, ScrollView, StyleSheet, TouchableOpacity,
+  TextInput, Alert, ActivityIndicator, FlatList,
 } from "react-native";
 import { useFocusEffect } from "@react-navigation/native";
+import * as DocumentPicker from "expo-document-picker";
 import api from "../../services/api";
 
 /*
- * ProgressDashboardScreen — Student
- * Displays a full progress overview of the student's internship.
- * Fetches data from GET /api/internship/progress/my which returns progress stats,
- * log submission breakdown (approved, rejected, pending, missing weeks),
- * and milestone status for mid-term and final milestones.
- * The main progress bar shows percentage of internship weeks completed.
- * Log submission rate bar shows how many logs have been submitted vs total weeks done.
- * This screen refreshes automatically every time the student navigates to it.
+ * LogScreen — Student
+ * Handles two functions via tab switching:
+ * 1. Log History — shows all submitted logs with status badges.
+ *    Rejected logs show lecturer comment inline.
+ *    Missing weeks are highlighted in amber.
+ *    Pending logs show a delete button — student can delete before lecturer reviews.
+ *    Tapping a log navigates to detail view in ReviewScreen.
+ * 2. Submit Log — form to submit a new weekly log with week number, date,
+ *    description, tasks, category tag, and optional evidence file upload.
  */
 
-const ProgressDashboardScreen = ({ navigation }) => {
-  const [progress, setProgress] = useState(null);
-  const [logStats, setLogStats] = useState(null);
-  const [milestones, setMilestones] = useState(null);
-  const [loading, setLoading] = useState(true);
+const CATEGORIES = ["technical", "meeting", "training", "research", "other"];
 
-  const fetchProgress = async () => {
+const LogScreen = ({ navigation }) => {
+  const [activeTab, setActiveTab] = useState("history");
+  const [logs, setLogs] = useState([]);
+  const [reminder, setReminder] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [submitting, setSubmitting] = useState(false);
+  const [weekNumber, setWeekNumber] = useState("");
+  const [logDate, setLogDate] = useState("");
+  const [logDescription, setLogDescription] = useState("");
+  const [tasksCompleted, setTasksCompleted] = useState("");
+  const [category, setCategory] = useState("technical");
+  const [file, setFile] = useState(null);
+
+  const fetchLogs = async () => {
     try {
       setLoading(true);
-      const res = await api.get("/internship/progress/my");
-      setProgress(res.data.progress);
-      setLogStats(res.data.logs);
-      setMilestones(res.data.milestones);
+      const res = await api.get("/internship/logs/my");
+      setLogs(res.data.logs);
+      setReminder(res.data.reminder);
     } catch (error) {
-      Alert.alert("Error", "Could not load progress data");
+      Alert.alert("Error", "Could not load logs");
     } finally {
       setLoading(false);
     }
   };
 
-  useFocusEffect(useCallback(() => { fetchProgress(); }, []));
+  useFocusEffect(useCallback(() => { fetchLogs(); }, []));
 
-  const getMilestoneColor = (status) => {
-    const colors = { completed: "#059669", in_progress: "#d97706", not_started: "#9ca3af" };
-    return colors[status] || "#9ca3af";
+  const pickFile = async () => {
+    try {
+      const result = await DocumentPicker.getDocumentAsync({ type: ["application/pdf", "image/*"] });
+      if (!result.canceled) setFile(result.assets[0]);
+    } catch (error) {
+      Alert.alert("Error", "Could not pick file");
+    }
   };
 
-  const getMilestoneBg = (status) => {
-    const colors = { completed: "#d1fae5", in_progress: "#fef3c7", not_started: "#f3f4f6" };
+  const handleSubmitLog = async () => {
+    if (!weekNumber || !logDate || !logDescription || !tasksCompleted) {
+      return Alert.alert("Error", "Please fill in all required fields");
+    }
+    setSubmitting(true);
+    try {
+      const formData = new FormData();
+      formData.append("weekNumber", weekNumber);
+      formData.append("logDate", logDate);
+      formData.append("logDescription", logDescription);
+      formData.append("tasksCompleted", tasksCompleted);
+      formData.append("category", category);
+      if (file) {
+        formData.append("evidence", {
+          uri: file.uri,
+          type: file.mimeType || "application/octet-stream",
+          name: file.name,
+        });
+      }
+      await api.post("/internship/logs", formData, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
+      Alert.alert("Success", "Weekly log submitted successfully!");
+      setWeekNumber("");
+      setLogDate("");
+      setLogDescription("");
+      setTasksCompleted("");
+      setCategory("technical");
+      setFile(null);
+      setActiveTab("history");
+      fetchLogs();
+    } catch (error) {
+      Alert.alert("Error", error.response?.data?.message || "Something went wrong");
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const handleDeleteLog = (logId) => {
+    Alert.alert(
+      "Delete Log",
+      "Are you sure you want to delete this weekly log? This cannot be undone.",
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Delete",
+          style: "destructive",
+          onPress: async () => {
+            try {
+              await api.delete(`/internship/logs/${logId}`);
+              Alert.alert("Deleted", "Log deleted successfully");
+              fetchLogs();
+            } catch (error) {
+              Alert.alert("Error", error.response?.data?.message || "Could not delete log");
+            }
+          },
+        },
+      ]
+    );
+  };
+
+  const getStatusColor = (status) => {
+    const colors = { approved: "#059669", rejected: "#dc2626", pending: "#d97706" };
+    return colors[status] || "#6b7280";
+  };
+
+  const getStatusBg = (status) => {
+    const colors = { approved: "#d1fae5", rejected: "#fee2e2", pending: "#fef3c7" };
     return colors[status] || "#f3f4f6";
   };
 
-  if (loading) {
-    return <View style={styles.centered}><ActivityIndicator size="large" color="#1a56db" /></View>;
-  }
-
-  if (!progress) {
-    return (
-      <View style={styles.centered}>
-        <Text style={styles.emptyText}>No progress data available</Text>
-        <TouchableOpacity style={styles.backBtn} onPress={() => navigation.goBack()}>
-          <Text style={styles.backBtnText}>‹ Go Back</Text>
-        </TouchableOpacity>
-      </View>
-    );
-  }
-
-  const logSubmissionRate = progress.weeksDone > 0
-    ? Math.round((logStats.totalLogs / progress.weeksDone) * 100)
-    : 0;
-
-  return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.content}>
-
-      {/* Main Progress Card */}
-      <View style={styles.progressCard}>
-        <View style={styles.progressCardHeader}>
-          <View>
-            <Text style={styles.progressCardTitle}>Internship Progress</Text>
-            <Text style={styles.progressCardSub}>Overall completion based on weeks</Text>
+  const renderLog = ({ item }) => (
+    <TouchableOpacity
+      style={styles.logRow}
+      onPress={() => navigation.navigate("Review", { logId: item._id, mode: "detail" })}
+    >
+      <View style={styles.logLeft}>
+        <Text style={styles.logWeek}>Week {item.weekNumber}</Text>
+        <Text style={styles.logDate}>{new Date(item.logDate).toDateString()}</Text>
+        <Text style={styles.logCategory}>{item.category}</Text>
+        {item.status === "rejected" && item.lecturerComment ? (
+          <View style={styles.commentBox}>
+            <Text style={styles.commentLabel}>💬 Lecturer Comment</Text>
+            <Text style={styles.commentText}>{item.lecturerComment}</Text>
           </View>
-          <Text style={styles.progressPct}>{progress.progressPercent}%</Text>
-        </View>
-        <View style={styles.progressBarWrap}>
-          <View style={[styles.progressBarFill, { width: `${progress.progressPercent}%` }]} />
-        </View>
-        <View style={styles.progressStatsRow}>
-          <View style={styles.progressStat}>
-            <Text style={styles.progressStatNum}>{progress.totalWeeks}</Text>
-            <Text style={styles.progressStatLabel}>Total Weeks</Text>
-          </View>
-          <View style={styles.progressStat}>
-            <Text style={styles.progressStatNum}>{progress.weeksDone}</Text>
-            <Text style={styles.progressStatLabel}>Weeks Done</Text>
-          </View>
-          <View style={styles.progressStat}>
-            <Text style={styles.progressStatNum}>{progress.weeksLeft}</Text>
-            <Text style={styles.progressStatLabel}>Weeks Left</Text>
-          </View>
-          <View style={styles.progressStat}>
-            <Text style={styles.progressStatNum}>{progress.totalDays}</Text>
-            <Text style={styles.progressStatLabel}>Total Days</Text>
-          </View>
-        </View>
-      </View>
-
-      {/* Log Submission Rate */}
-      <View style={styles.card}>
-        <Text style={styles.cardTitle}>📋 Log Submission Rate</Text>
-        <View style={styles.rateRow}>
-          <Text style={styles.rateLabel}>Logs submitted</Text>
-          <Text style={styles.rateValue}>{logStats.totalLogs} of {progress.weeksDone} weeks</Text>
-        </View>
-        <View style={styles.rateBarWrap}>
-          <View style={[styles.rateBarFill, { width: `${Math.min(logSubmissionRate, 100)}%` }]} />
-        </View>
-        <View style={styles.logStatsGrid}>
-          <View style={[styles.logStatItem, { backgroundColor: "#d1fae5" }]}>
-            <Text style={[styles.logStatNum, { color: "#059669" }]}>{logStats.approvedLogs}</Text>
-            <Text style={[styles.logStatLabel, { color: "#059669" }]}>Approved</Text>
-          </View>
-          <View style={[styles.logStatItem, { backgroundColor: "#fef3c7" }]}>
-            <Text style={[styles.logStatNum, { color: "#d97706" }]}>{logStats.pendingLogs}</Text>
-            <Text style={[styles.logStatLabel, { color: "#d97706" }]}>Pending</Text>
-          </View>
-          <View style={[styles.logStatItem, { backgroundColor: "#fee2e2" }]}>
-            <Text style={[styles.logStatNum, { color: "#dc2626" }]}>{logStats.rejectedLogs}</Text>
-            <Text style={[styles.logStatLabel, { color: "#dc2626" }]}>Rejected</Text>
-          </View>
-          <View style={[styles.logStatItem, { backgroundColor: "#f3f4f6" }]}>
-            <Text style={[styles.logStatNum, { color: "#6b7280" }]}>{logStats.missingWeeks.length}</Text>
-            <Text style={[styles.logStatLabel, { color: "#6b7280" }]}>Missing</Text>
-          </View>
-        </View>
-
-        {logStats.missingWeeks.length > 0 && (
-          <View style={styles.missingBanner}>
-            <Text style={styles.missingBannerTitle}>⚠️ Missing Weeks</Text>
-            <Text style={styles.missingBannerText}>
-              Weeks not submitted: {logStats.missingWeeks.join(", ")}
-            </Text>
-            <TouchableOpacity
-              style={styles.missingBannerBtn}
-              onPress={() => navigation.navigate("Log")}
-            >
-              <Text style={styles.missingBannerBtnText}>Submit Now →</Text>
-            </TouchableOpacity>
-          </View>
+        ) : null}
+        {item.status === "pending" && (
+          <TouchableOpacity
+            style={styles.deleteLogBtn}
+            onPress={() => handleDeleteLog(item._id)}
+          >
+            <Text style={styles.deleteLogBtnText}>🗑 Delete</Text>
+          </TouchableOpacity>
         )}
       </View>
+      <View style={[styles.statusBadge, { backgroundColor: getStatusBg(item.status) }]}>
+        <Text style={[styles.statusText, { color: getStatusColor(item.status) }]}>
+          {item.status.toUpperCase()}
+        </Text>
+      </View>
+    </TouchableOpacity>
+  );
 
-      {/* Milestone Progress */}
-      <View style={styles.card}>
-        <Text style={styles.cardTitle}>🎯 Milestone Progress</Text>
-        <View style={styles.milestoneRow}>
-          <View style={[styles.milestoneDot, { backgroundColor: getMilestoneColor(milestones.midTermStatus) }]} />
-          <Text style={styles.milestoneLabel}>Mid-term Milestone</Text>
-          <View style={[styles.milestoneBadge, { backgroundColor: getMilestoneBg(milestones.midTermStatus) }]}>
-            <Text style={[styles.milestoneBadgeText, { color: getMilestoneColor(milestones.midTermStatus) }]}>
-              {milestones.midTermStatus.replace(/_/g, " ")}
-            </Text>
-          </View>
-        </View>
-        <View style={[styles.milestoneRow, { borderBottomWidth: 0 }]}>
-          <View style={[styles.milestoneDot, { backgroundColor: getMilestoneColor(milestones.finalStatus) }]} />
-          <Text style={styles.milestoneLabel}>Final Milestone</Text>
-          <View style={[styles.milestoneBadge, { backgroundColor: getMilestoneBg(milestones.finalStatus) }]}>
-            <Text style={[styles.milestoneBadgeText, { color: getMilestoneColor(milestones.finalStatus) }]}>
-              {milestones.finalStatus.replace(/_/g, " ")}
-            </Text>
-          </View>
-        </View>
+  return (
+    <View style={styles.container}>
+      <View style={styles.tabBar}>
+        <TouchableOpacity
+          style={[styles.tab, activeTab === "history" && styles.tabActive]}
+          onPress={() => setActiveTab("history")}
+        >
+          <Text style={[styles.tabText, activeTab === "history" && styles.tabTextActive]}>Log History</Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={[styles.tab, activeTab === "submit" && styles.tabActive]}
+          onPress={() => setActiveTab("submit")}
+        >
+          <Text style={[styles.tabText, activeTab === "submit" && styles.tabTextActive]}>Submit Log</Text>
+        </TouchableOpacity>
       </View>
 
-      {/* Duration Summary */}
-      <View style={styles.durationCard}>
-        <Text style={styles.durationTitle}>📅 Duration Summary</Text>
-        <View style={styles.durationRow}>
-          <View style={styles.durationItem}>
-            <Text style={styles.durationNum}>{progress.totalWeeks}</Text>
-            <Text style={styles.durationLabel}>Total Weeks</Text>
-          </View>
-          <View style={styles.durationItem}>
-            <Text style={styles.durationNum}>{Math.round(progress.totalDays / 30)}</Text>
-            <Text style={styles.durationLabel}>Months</Text>
-          </View>
-          <View style={styles.durationItem}>
-            <Text style={styles.durationNum}>{progress.totalDays}</Text>
-            <Text style={styles.durationLabel}>Total Days</Text>
-          </View>
-        </View>
-      </View>
+      {activeTab === "history" ? (
+        loading ? (
+          <View style={styles.centered}><ActivityIndicator size="large" color="#1a56db" /></View>
+        ) : (
+          <FlatList
+            data={logs}
+            keyExtractor={(item) => item._id}
+            renderItem={renderLog}
+            contentContainerStyle={styles.listContent}
+            ListHeaderComponent={
+              reminder?.hasReminder ? (
+                <TouchableOpacity style={styles.reminderBanner} onPress={() => setActiveTab("submit")}>
+                  <Text style={styles.reminderIcon}>⚠️</Text>
+                  <View>
+                    <Text style={styles.reminderTitle}>Missing Logs Detected</Text>
+                    <Text style={styles.reminderSub}>Missing weeks: {reminder.missingWeeks.join(", ")}</Text>
+                  </View>
+                </TouchableOpacity>
+              ) : null
+            }
+            ListEmptyComponent={
+              <View style={styles.emptyBox}>
+                <Text style={styles.emptyIcon}>📋</Text>
+                <Text style={styles.emptyText}>No logs submitted yet</Text>
+                <TouchableOpacity onPress={() => setActiveTab("submit")}>
+                  <Text style={styles.emptyLink}>Submit your first log →</Text>
+                </TouchableOpacity>
+              </View>
+            }
+          />
+        )
+      ) : (
+        <ScrollView contentContainerStyle={styles.listContent}>
+          <Text style={styles.label}>Week Number *</Text>
+          <TextInput style={styles.input} placeholder="e.g. 9" value={weekNumber} onChangeText={setWeekNumber} keyboardType="numeric" />
 
-      <TouchableOpacity style={styles.backToPlacementBtn} onPress={() => navigation.goBack()}>
-        <Text style={styles.backToPlacementBtnText}>‹ Back to My Placement</Text>
-      </TouchableOpacity>
+          <Text style={styles.label}>Log Date (YYYY-MM-DD) *</Text>
+          <TextInput style={styles.input} placeholder="e.g. 2026-04-28" value={logDate} onChangeText={setLogDate} />
 
-    </ScrollView>
+          <Text style={styles.label}>Log Description *</Text>
+          <TextInput style={styles.textArea} placeholder="Describe what you did this week..." value={logDescription} onChangeText={setLogDescription} multiline />
+
+          <Text style={styles.label}>Tasks Completed *</Text>
+          <TextInput style={styles.textArea} placeholder="List the main tasks you completed..." value={tasksCompleted} onChangeText={setTasksCompleted} multiline />
+
+          <Text style={styles.label}>Category</Text>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.categoryScroll}>
+            {CATEGORIES.map((cat) => (
+              <TouchableOpacity
+                key={cat}
+                style={[styles.categoryChip, category === cat && styles.categoryChipActive]}
+                onPress={() => setCategory(cat)}
+              >
+                <Text style={[styles.categoryChipText, category === cat && styles.categoryChipTextActive]}>
+                  {cat}
+                </Text>
+              </TouchableOpacity>
+            ))}
+          </ScrollView>
+
+          <Text style={styles.label}>Upload Evidence (Optional)</Text>
+          <TouchableOpacity style={styles.uploadBox} onPress={pickFile}>
+            <Text style={styles.uploadIcon}>📤</Text>
+            <Text style={styles.uploadText}>{file ? file.name : "Tap to upload timesheet / photo / PDF"}</Text>
+            <Text style={styles.uploadSub}>Max 5MB — PDF, JPG, PNG</Text>
+          </TouchableOpacity>
+
+          <TouchableOpacity style={styles.btn} onPress={handleSubmitLog} disabled={submitting}>
+            {submitting
+              ? <ActivityIndicator color="#fff" />
+              : <Text style={styles.btnText}>Submit Weekly Log</Text>
+            }
+          </TouchableOpacity>
+        </ScrollView>
+      )}
+    </View>
   );
 };
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: "#f0f4ff" },
-  content: { padding: "5%" },
-  centered: { flex: 1, justifyContent: "center", alignItems: "center", padding: 20 },
-  emptyText: { fontSize: 14, color: "#6b7280", marginBottom: 16 },
-  backBtn: { padding: 10 },
-  backBtnText: { color: "#1a56db", fontSize: 14, fontWeight: "500" },
-  progressCard: { backgroundColor: "#1a56db", borderRadius: 14, padding: 18, marginBottom: 14 },
-  progressCardHeader: { flexDirection: "row", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 14 },
-  progressCardTitle: { fontSize: 14, fontWeight: "600", color: "#fff" },
-  progressCardSub: { fontSize: 11, color: "rgba(255,255,255,0.7)", marginTop: 2 },
-  progressPct: { fontSize: 30, fontWeight: "700", color: "#fff" },
-  progressBarWrap: { backgroundColor: "rgba(255,255,255,0.2)", borderRadius: 20, height: 10, overflow: "hidden", marginBottom: 16 },
-  progressBarFill: { backgroundColor: "#fff", height: "100%", borderRadius: 20 },
-  progressStatsRow: { flexDirection: "row", justifyContent: "space-around" },
-  progressStat: { alignItems: "center" },
-  progressStatNum: { fontSize: 18, fontWeight: "700", color: "#fff" },
-  progressStatLabel: { fontSize: 10, color: "rgba(255,255,255,0.75)", marginTop: 2 },
-  card: { backgroundColor: "#fff", borderRadius: 12, padding: 16, marginBottom: 14, borderWidth: 1, borderColor: "#e5e7eb" },
-  cardTitle: { fontSize: 13, fontWeight: "600", color: "#1f2937", marginBottom: 14, paddingBottom: 8, borderBottomWidth: 1, borderBottomColor: "#f3f4f6" },
-  rateRow: { flexDirection: "row", justifyContent: "space-between", marginBottom: 8 },
-  rateLabel: { fontSize: 12, color: "#6b7280" },
-  rateValue: { fontSize: 12, fontWeight: "600", color: "#1f2937" },
-  rateBarWrap: { backgroundColor: "#f3f4f6", borderRadius: 20, height: 8, overflow: "hidden", marginBottom: 14 },
-  rateBarFill: { backgroundColor: "#1a56db", height: "100%", borderRadius: 20 },
-  logStatsGrid: { flexDirection: "row", gap: 8, marginBottom: 12 },
-  logStatItem: { flex: 1, borderRadius: 8, padding: 10, alignItems: "center" },
-  logStatNum: { fontSize: 18, fontWeight: "700" },
-  logStatLabel: { fontSize: 10, marginTop: 2 },
-  missingBanner: { backgroundColor: "#fff7ed", borderRadius: 8, padding: 12, borderWidth: 1, borderColor: "#fed7aa" },
-  missingBannerTitle: { fontSize: 12, fontWeight: "600", color: "#92400e", marginBottom: 4 },
-  missingBannerText: { fontSize: 12, color: "#b45309", marginBottom: 8 },
-  missingBannerBtn: { alignSelf: "flex-start" },
-  missingBannerBtnText: { fontSize: 12, color: "#1a56db", fontWeight: "600" },
-  milestoneRow: { flexDirection: "row", alignItems: "center", paddingVertical: 12, borderBottomWidth: 1, borderBottomColor: "#f3f4f6" },
-  milestoneDot: { width: 12, height: 12, borderRadius: 6, marginRight: 10 },
-  milestoneLabel: { flex: 1, fontSize: 13, color: "#374151" },
-  milestoneBadge: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 20 },
-  milestoneBadgeText: { fontSize: 11, fontWeight: "600", textTransform: "capitalize" },
-  durationCard: { backgroundColor: "#ede9fe", borderRadius: 12, padding: 16, marginBottom: 14, borderWidth: 1, borderColor: "#c4b5fd" },
-  durationTitle: { fontSize: 12, fontWeight: "600", color: "#7c3aed", marginBottom: 12 },
-  durationRow: { flexDirection: "row", justifyContent: "space-around" },
-  durationItem: { alignItems: "center" },
-  durationNum: { fontSize: 22, fontWeight: "700", color: "#7c3aed" },
-  durationLabel: { fontSize: 10, color: "#6d28d9", marginTop: 2 },
-  backToPlacementBtn: { backgroundColor: "#fff", borderWidth: 1, borderColor: "#1a56db", borderRadius: 10, padding: 14, alignItems: "center", marginBottom: 30 },
-  backToPlacementBtnText: { color: "#1a56db", fontSize: 14, fontWeight: "500" },
+  centered: { flex: 1, justifyContent: "center", alignItems: "center" },
+  tabBar: { flexDirection: "row", backgroundColor: "#fff", borderBottomWidth: 1, borderBottomColor: "#e5e7eb" },
+  tab: { flex: 1, paddingVertical: 14, alignItems: "center", borderBottomWidth: 2, borderBottomColor: "transparent" },
+  tabActive: { borderBottomColor: "#1a56db" },
+  tabText: { fontSize: 14, fontWeight: "500", color: "#9ca3af" },
+  tabTextActive: { color: "#1a56db", fontWeight: "600" },
+  listContent: { padding: "5%" },
+  reminderBanner: { backgroundColor: "#fff7ed", borderWidth: 1, borderColor: "#fed7aa", borderRadius: 10, padding: 14, flexDirection: "row", alignItems: "center", gap: 10, marginBottom: 14 },
+  reminderIcon: { fontSize: 20 },
+  reminderTitle: { fontSize: 13, fontWeight: "600", color: "#92400e" },
+  reminderSub: { fontSize: 11, color: "#b45309", marginTop: 2 },
+  logRow: { backgroundColor: "#fff", borderRadius: 10, padding: 14, marginBottom: 10, borderWidth: 1, borderColor: "#e5e7eb", flexDirection: "row", alignItems: "flex-start", justifyContent: "space-between" },
+  logLeft: { flex: 1, marginRight: 10 },
+  logWeek: { fontSize: 14, fontWeight: "600", color: "#111827" },
+  logDate: { fontSize: 11, color: "#9ca3af", marginTop: 2 },
+  logCategory: { fontSize: 11, color: "#1a56db", marginTop: 3, textTransform: "capitalize" },
+  commentBox: { backgroundColor: "#f0f4ff", borderRadius: 6, padding: 8, marginTop: 8, borderLeftWidth: 3, borderLeftColor: "#1a56db" },
+  commentLabel: { fontSize: 10, fontWeight: "600", color: "#1a56db", marginBottom: 3 },
+  commentText: { fontSize: 12, color: "#374151" },
+  deleteLogBtn: { marginTop: 8, backgroundColor: "#fee2e2", borderRadius: 6, padding: 6, alignSelf: "flex-start" },
+  deleteLogBtnText: { fontSize: 11, color: "#dc2626", fontWeight: "500" },
+  statusBadge: { paddingHorizontal: 10, paddingVertical: 4, borderRadius: 20, alignSelf: "flex-start" },
+  statusText: { fontSize: 10, fontWeight: "600" },
+  emptyBox: { alignItems: "center", paddingVertical: 40 },
+  emptyIcon: { fontSize: 40, marginBottom: 10 },
+  emptyText: { fontSize: 14, color: "#6b7280", marginBottom: 8 },
+  emptyLink: { fontSize: 13, color: "#1a56db", fontWeight: "500" },
+  label: { fontSize: 12, fontWeight: "600", color: "#374151", marginBottom: 5, textTransform: "uppercase", letterSpacing: 0.4 },
+  input: { backgroundColor: "#fff", borderWidth: 1, borderColor: "#e5e7eb", borderRadius: 8, padding: 12, fontSize: 14, marginBottom: 14, color: "#111827" },
+  textArea: { backgroundColor: "#fff", borderWidth: 1, borderColor: "#e5e7eb", borderRadius: 8, padding: 12, fontSize: 14, marginBottom: 14, color: "#111827", minHeight: 90, textAlignVertical: "top" },
+  categoryScroll: { marginBottom: 14 },
+  categoryChip: { paddingHorizontal: 14, paddingVertical: 7, borderRadius: 20, borderWidth: 1, borderColor: "#e5e7eb", backgroundColor: "#fff", marginRight: 8 },
+  categoryChipActive: { backgroundColor: "#1a56db", borderColor: "#1a56db" },
+  categoryChipText: { fontSize: 12, color: "#6b7280", textTransform: "capitalize" },
+  categoryChipTextActive: { color: "#fff", fontWeight: "500" },
+  uploadBox: { backgroundColor: "#fff", borderWidth: 1.5, borderColor: "#e5e7eb", borderStyle: "dashed", borderRadius: 10, padding: 20, alignItems: "center", marginBottom: 20 },
+  uploadIcon: { fontSize: 28, marginBottom: 6 },
+  uploadText: { fontSize: 13, fontWeight: "500", color: "#4b5563" },
+  uploadSub: { fontSize: 11, color: "#9ca3af", marginTop: 3 },
+  btn: { backgroundColor: "#1a56db", padding: 15, borderRadius: 10, alignItems: "center", marginBottom: 30 },
+  btnText: { color: "#fff", fontSize: 15, fontWeight: "600" },
 });
 
-export default ProgressDashboardScreen;
+export default LogScreen;

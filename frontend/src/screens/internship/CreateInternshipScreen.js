@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   View,
   Text,
@@ -11,6 +11,7 @@ import {
 } from "react-native";
 import * as DocumentPicker from "expo-document-picker";
 import { createInternship } from "../../services/api";
+import api from "../../services/api";
 
 const CreateInternshipScreen = ({ navigation }) => {
   const [companyName, setCompanyName] = useState("");
@@ -21,6 +22,23 @@ const CreateInternshipScreen = ({ navigation }) => {
   const [endDate, setEndDate] = useState("");
   const [file, setFile] = useState(null);
   const [submitting, setSubmitting] = useState(false);
+  const [lecturers, setLecturers] = useState([]);
+  const [selectedLecturer, setSelectedLecturer] = useState(null);
+  const [lecturerDropdownVisible, setLecturerDropdownVisible] = useState(false);
+  const [lecturerSearch, setLecturerSearch] = useState("");
+
+  useEffect(() => {
+    const fetchLecturers = async () => {
+      try {
+        const res = await api.get("/internship/supervisors");
+        const fetchedLecturers = res.data?.lecturers || res.data?.supervisors || [];
+        setLecturers(fetchedLecturers);
+      } catch {
+        Alert.alert("Error", "Could not load lecturers");
+      }
+    };
+    fetchLecturers();
+  }, []);
 
   const pickFile = async () => {
     try {
@@ -35,8 +53,8 @@ const CreateInternshipScreen = ({ navigation }) => {
   };
 
   const handleSubmit = async () => {
-    if (!companyName || !companyAddress || !supervisorName || !supervisorEmail || !startDate || !endDate) {
-      return Alert.alert("Missing fields", "Please fill in all required fields.");
+    if (!companyName || !companyAddress || !supervisorName || !supervisorEmail || !startDate || !endDate || !selectedLecturer) {
+      return Alert.alert("Missing fields", "Please fill in all required fields and select a supervisor.");
     }
 
     const formData = new FormData();
@@ -46,6 +64,7 @@ const CreateInternshipScreen = ({ navigation }) => {
     formData.append("supervisorEmail", supervisorEmail);
     formData.append("startDate", startDate);
     formData.append("endDate", endDate);
+    formData.append("assignedLecturer", selectedLecturer);
 
     if (file) {
       formData.append("companyLetter", {
@@ -93,6 +112,48 @@ const CreateInternshipScreen = ({ navigation }) => {
       <Text style={styles.label}>End Date</Text>
       <TextInput style={styles.input} value={endDate} onChangeText={setEndDate} placeholder="YYYY-MM-DD" />
 
+      <Text style={styles.label}>Assign Internship Supervisor</Text>
+      <TouchableOpacity
+        style={styles.dropdownButton}
+        onPress={() => setLecturerDropdownVisible((prev) => !prev)}
+      >
+        <Text style={selectedLecturer ? styles.dropdownButtonText : styles.dropdownPlaceholder}>
+          {selectedLecturer
+            ? `${lecturers.find((lec) => lec._id === selectedLecturer)?.name || "Selected supervisor"} — ${lecturers.find((lec) => lec._id === selectedLecturer)?.department || ""}`
+            : "Select a supervisor"}
+        </Text>
+      </TouchableOpacity>
+      {lecturerDropdownVisible && (
+        <View style={styles.dropdownBox}>
+          <TextInput
+            style={styles.dropdownSearch}
+            placeholder="Search supervisors..."
+            value={lecturerSearch}
+            onChangeText={setLecturerSearch}
+          />
+          <ScrollView style={styles.dropdownList}>
+            {lecturers
+              .filter((lec) =>
+                lec.name.toLowerCase().includes(lecturerSearch.toLowerCase()) ||
+                lec.department.toLowerCase().includes(lecturerSearch.toLowerCase())
+              )
+              .map((lec) => (
+                <TouchableOpacity
+                  key={lec._id}
+                  style={styles.lecturerOption}
+                  onPress={() => {
+                    setSelectedLecturer(lec._id);
+                    setLecturerDropdownVisible(false);
+                    setLecturerSearch("");
+                  }}
+                >
+                  <Text style={styles.lecturerText}>{lec.name} — {lec.department}</Text>
+                </TouchableOpacity>
+              ))}
+          </ScrollView>
+        </View>
+      )}
+
       <TouchableOpacity style={styles.fileButton} onPress={pickFile}>
         <Text style={styles.fileButtonText}>{file ? file.name || "Selected file" : "Upload company letter"}</Text>
       </TouchableOpacity>
@@ -132,6 +193,61 @@ const styles = StyleSheet.create({
     marginTop: 8,
     borderWidth: 1,
     borderColor: "#d1d5db",
+  },
+  lecturerOption: {
+    borderWidth: 1,
+    borderColor: "#d1d5db",
+    borderRadius: 8,
+    padding: 12,
+    marginTop: 8,
+    marginBottom: 4,
+  },
+  lecturerOptionSelected: {
+    borderColor: "#1a56db",
+    backgroundColor: "#eff6ff",
+  },
+  lecturerText: {
+    color: "#374151",
+    fontSize: 15,
+  },
+  lecturerTextSelected: {
+    color: "#1a56db",
+    fontWeight: "600",
+    fontSize: 15,
+  },
+  dropdownButton: {
+    marginTop: 8,
+    padding: 14,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: "#d1d5db",
+    backgroundColor: "#ffffff",
+  },
+  dropdownButtonText: {
+    color: "#111827",
+    fontSize: 15,
+  },
+  dropdownPlaceholder: {
+    color: "#9ca3af",
+    fontSize: 15,
+  },
+  dropdownBox: {
+    marginTop: 8,
+    borderWidth: 1,
+    borderColor: "#d1d5db",
+    borderRadius: 10,
+    backgroundColor: "#ffffff",
+    maxHeight: 220,
+  },
+  dropdownSearch: {
+    padding: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: "#e5e7eb",
+    fontSize: 14,
+    color: "#111827",
+  },
+  dropdownList: {
+    maxHeight: 170,
   },
   fileButton: {
     marginTop: 18,

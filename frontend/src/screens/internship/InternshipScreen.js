@@ -92,6 +92,12 @@ const InternshipScreen = ({ navigation }) => {
         <Text style={styles.value}>{placement.companyName || "N/A"}</Text>
         <Text style={styles.label}>Supervisor</Text>
         <Text style={styles.value}>{placement.supervisorName || "N/A"}</Text>
+        {placement.assignedLecturer?.name ? (
+          <>
+            <Text style={styles.label}>Assigned Lecturer</Text>
+            <Text style={styles.value}>{placement.assignedLecturer.name}</Text>
+          </>
+        ) : null}
         <Text style={styles.label}>Start Date</Text>
         <Text style={styles.value}>{placement.startDate ? new Date(placement.startDate).toDateString() : "N/A"}</Text>
         <Text style={styles.label}>End Date</Text>

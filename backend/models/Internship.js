@@ -4,7 +4,7 @@ const mongoose = require("mongoose");
  * Internship Schema
  * Stores internship placement details for each student.
  * Students create one placement record with company, supervisor, and date info.
- * Admins verify placements and llecturers review weekly logs.
+ * Admins verify placements and lecturers review weekly logs.
  * courseId links this placement to a specific course from the Course module (M2).
  * Milestones track mid-term and final progress within the placement.
  * timelineStatus tracks the overall placement journey from submitted to completed.
@@ -17,11 +17,7 @@ const internshipSchema = new mongoose.Schema(
       ref: "User",
       required: true,
     },
-    courseId: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "Course",
-      default: null,
-    },
+    
     companyName: {
       type: String,
       required: [true, "Company name is required"],
@@ -55,6 +51,11 @@ const internshipSchema = new mongoose.Schema(
       type: String,
       default: "",
     },
+    assignedLecturer: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      default: null,
+    },
     verifiedByAdmin: {
       type: Boolean,
       default: false,
@@ -79,6 +80,16 @@ const internshipSchema = new mongoose.Schema(
       enum: ["not_started", "in_progress", "completed"],
       default: "not_started",
     },
+    _type: {
+  type: String,
+  default: null,
+},
+approvedSupervisors: [
+  {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "User",
+  }
+],
   },
   {
     timestamps: true,

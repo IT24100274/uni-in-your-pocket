@@ -8,6 +8,7 @@ const {
   getMyInternship,
   updateInternship,
   deleteInternship,
+  deleteInternshipById,
   getAllInternships,
   verifyInternship,
   updateMilestone,
@@ -19,10 +20,13 @@ const {
   getAllLogs,
   reviewLog,
   getProgressStats,
+  getSupervisors,
+  assignSupervisor,
+  removeSupervisor,
 } = require("../controllers/InternshipController");
 
 /*
- * Iinternship Tracker Routes
+ * Internship Tracker Routes
  * All routes are JWT protected using the protect middleware.
  * Role based access is enforced using the authorize middleware.
  * Students manage their own placement and weekly logs.
@@ -36,6 +40,7 @@ router.post("/", protect, authorize("student"), upload.single("companyLetter"), 
 router.get("/my", protect, authorize("student"), getMyInternship);
 router.patch("/my", protect, authorize("student"), upload.single("companyLetter"), updateInternship);
 router.delete("/my", protect, authorize("student"), deleteInternship);
+router.delete("/:id", protect, authorize("admin"), deleteInternshipById);
 router.patch("/:id/verify", protect, authorize("admin"), verifyInternship);
 router.patch("/milestone", protect, authorize("student"), updateMilestone);
 
@@ -52,6 +57,22 @@ router.patch("/logs/:id/review", protect, authorize("lecturer", "admin"), review
 router.delete("/logs/:id", protect, authorize("student"), deleteLog);
 
 // Progress stats route
-router.get("/progress/my", protect, authorize("student"), getProgressStats);
+ router.get("/progress/my", protect, authorize("student"), getProgressStats);
+
+// Supervisor management routes
+router.get("/supervisors", protect, getSupervisors);
+router.post("/supervisors/:lecturerId", protect, authorize("admin"), assignSupervisor);
+router.delete("/supervisors/:lecturerId", protect, authorize("admin"), removeSupervisor);
+
+// Lecturers list for search (all lecturers — admin use)
+router.get("/lecturers", protect, authorize("admin", "student"), async (req, res) => {
+  try {
+    const User = require("../models/User");
+    const lecturers = await User.find({ role: "lecturer" }).select("_id name email department");
+    res.status(200).json({ lecturers });
+  } catch (error) {
+    res.status(500).json({ message: "Server error", error: error.message });
+  }
+});
 
 module.exports = router;

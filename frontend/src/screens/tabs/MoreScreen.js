@@ -21,7 +21,7 @@ const MoreScreen = ({ navigation, route }) => {
     items.push({ label: "My Courses", route: "MyCourses", icon: "library-outline" });
     items.push({ label: "Forwarded Tickets", route: "ForwardedTickets", icon: "mail-unread-outline" });
     items.push({ label: "Manage Results", route: "ManageResults", icon: "ribbon-outline" });
-    items.push({ label: "Review Internships", route: "ReviewInternships", icon: "clipboard-outline" });
+    items.push({ label: "Review Internships", route: "Review", icon: "clipboard-outline" });
   }
 
   if (userRole === "admin") {
@@ -29,7 +29,7 @@ const MoreScreen = ({ navigation, route }) => {
     items.push({ label: "Manage Tickets", route: "ManageTickets", icon: "ticket-outline" });
     items.push({ label: "All Results", route: "AllResults", icon: "ribbon-outline" });
     items.push({ label: "Users", route: "Users", icon: "people-outline" });
-    items.push({ label: "Review Internships", route: "ReviewInternships", icon: "clipboard-outline" });
+    items.push({ label: "Review Internships", route: "Review", icon: "clipboard-outline" });
   }
 
   const handleLogout = () => {

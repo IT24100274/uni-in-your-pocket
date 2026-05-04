@@ -21,6 +21,10 @@ const MoreScreen = ({ navigation, route }) => {
     items.push({ label: "Manage Results", route: "ManageResults", icon: "ribbon-outline" });
   }
 
+  if (userRole === "student_representative") {
+    items.push({ label: "All Tickets", route: "ManageTickets", icon: "ticket-outline" });
+  }
+
   if (userRole === "admin") {
     items.push({ label: "Manage Enrollments", route: "ManageEnrollments", icon: "checkmark-circle-outline" });
     items.push({ label: "Manage Tickets", route: "ManageTickets", icon: "ticket-outline" });

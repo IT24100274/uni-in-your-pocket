@@ -10,6 +10,8 @@ import {
   RefreshControl,
   TextInput,
   Modal,
+  Keyboard,
+  TouchableWithoutFeedback,
 } from "react-native";
 import { getCourseResults, togglePublish, updateResult, deleteResult } from "../../services/api";
 import api from "../../services/api";
@@ -22,7 +24,6 @@ const ManageResultsScreen = ({ navigation }) => {
   const [loadingCourses, setLoadingCourses] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
 
-  // Edit modal state
   const [editModalVisible, setEditModalVisible] = useState(false);
   const [editingResult, setEditingResult] = useState(null);
   const [editMarks, setEditMarks] = useState("");
@@ -79,6 +80,7 @@ const ManageResultsScreen = ({ navigation }) => {
   };
 
   const handleEditSubmit = async () => {
+    Keyboard.dismiss();
     if (!editMarks || isNaN(editMarks) || Number(editMarks) < 0 || Number(editMarks) > 100) {
       Alert.alert("Error", "Please enter valid marks between 0 and 100");
       return;
@@ -159,7 +161,6 @@ const ManageResultsScreen = ({ navigation }) => {
       >
         <Text style={styles.title}>Manage Results</Text>
 
-        {/* Course Selection */}
         <Text style={styles.label}>Select Course</Text>
         {courses.map((course) => (
           <TouchableOpacity
@@ -181,7 +182,6 @@ const ManageResultsScreen = ({ navigation }) => {
           </TouchableOpacity>
         ))}
 
-        {/* Results List */}
         {selectedCourse && (
           <>
             <Text style={styles.label}>Results for {selectedCourse.title}</Text>
@@ -200,7 +200,6 @@ const ManageResultsScreen = ({ navigation }) => {
             ) : (
               results.map((result) => (
                 <View key={result._id} style={styles.resultCard}>
-                  {/* Header */}
                   <View style={styles.resultHeader}>
                     <View>
                       <Text style={styles.studentName}>{result.student?.name}</Text>
@@ -218,14 +217,12 @@ const ManageResultsScreen = ({ navigation }) => {
                     <Text style={styles.remarks}>📝 {result.remarks}</Text>
                   ) : null}
 
-                  {/* Concern file indicator */}
                   {result.feedbackFile?.url ? (
                     <Text style={styles.concernIndicator}>
                       ⚠️ Student submitted a concern
                     </Text>
                   ) : null}
 
-                  {/* Status Row */}
                   <View style={styles.resultFooter}>
                     <View style={[
                       styles.statusBadge,
@@ -252,7 +249,6 @@ const ManageResultsScreen = ({ navigation }) => {
                     )}
                   </View>
 
-                  {/* Edit and Delete buttons */}
                   {!result.isLocked && (
                     <View style={styles.actionRow}>
                       <TouchableOpacity
@@ -284,56 +280,68 @@ const ManageResultsScreen = ({ navigation }) => {
         visible={editModalVisible}
         transparent
         animationType="slide"
-        onRequestClose={() => setEditModalVisible(false)}
+        onRequestClose={() => {
+          Keyboard.dismiss();
+          setEditModalVisible(false);
+        }}
       >
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <Text style={styles.modalTitle}>Edit Result</Text>
-            <Text style={styles.modalStudent}>
-              Student: {editingResult?.student?.name}
-            </Text>
+        <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+          <View style={styles.modalOverlay}>
+            <View style={styles.modalContent}>
+              <Text style={styles.modalTitle}>Edit Result</Text>
+              <Text style={styles.modalStudent}>
+                Student: {editingResult?.student?.name}
+              </Text>
 
-            <Text style={styles.modalLabel}>Marks (0 - 100)</Text>
-            <TextInput
-              style={styles.modalInput}
-              value={editMarks}
-              onChangeText={setEditMarks}
-              keyboardType="numeric"
-              placeholder="Enter marks"
-            />
+              <Text style={styles.modalLabel}>Marks (0 - 100)</Text>
+              <TextInput
+                style={styles.modalInput}
+                value={editMarks}
+                onChangeText={setEditMarks}
+                keyboardType="numeric"
+                placeholder="Enter marks"
+                returnKeyType="done"
+                onSubmitEditing={Keyboard.dismiss}
+              />
 
-            <Text style={styles.modalLabel}>Remarks</Text>
-            <TextInput
-              style={[styles.modalInput, styles.modalTextArea]}
-              value={editRemarks}
-              onChangeText={setEditRemarks}
-              placeholder="Enter remarks"
-              multiline
-              numberOfLines={3}
-            />
+              <Text style={styles.modalLabel}>Remarks</Text>
+              <TextInput
+                style={[styles.modalInput, styles.modalTextArea]}
+                value={editRemarks}
+                onChangeText={setEditRemarks}
+                placeholder="Enter remarks"
+                multiline
+                numberOfLines={3}
+                returnKeyType="done"
+                onSubmitEditing={Keyboard.dismiss}
+              />
 
-            <View style={styles.modalButtons}>
-              <TouchableOpacity
-                style={styles.modalCancelButton}
-                onPress={() => setEditModalVisible(false)}
-              >
-                <Text style={styles.modalCancelText}>Cancel</Text>
-              </TouchableOpacity>
+              <View style={styles.modalButtons}>
+                <TouchableOpacity
+                  style={styles.modalCancelButton}
+                  onPress={() => {
+                    Keyboard.dismiss();
+                    setEditModalVisible(false);
+                  }}
+                >
+                  <Text style={styles.modalCancelText}>Cancel</Text>
+                </TouchableOpacity>
 
-              <TouchableOpacity
-                style={styles.modalSaveButton}
-                onPress={handleEditSubmit}
-                disabled={editLoading}
-              >
-                {editLoading ? (
-                  <ActivityIndicator color="#fff" />
-                ) : (
-                  <Text style={styles.modalSaveText}>Save</Text>
-                )}
-              </TouchableOpacity>
+                <TouchableOpacity
+                  style={styles.modalSaveButton}
+                  onPress={handleEditSubmit}
+                  disabled={editLoading}
+                >
+                  {editLoading ? (
+                    <ActivityIndicator color="#fff" />
+                  ) : (
+                    <Text style={styles.modalSaveText}>Save</Text>
+                  )}
+                </TouchableOpacity>
+              </View>
             </View>
           </View>
-        </View>
+        </TouchableWithoutFeedback>
       </Modal>
     </>
   );
@@ -534,7 +542,6 @@ const styles = StyleSheet.create({
   bottomSpacing: {
     height: 40,
   },
-  // Modal styles
   modalOverlay: {
     flex: 1,
     backgroundColor: "rgba(0,0,0,0.5)",

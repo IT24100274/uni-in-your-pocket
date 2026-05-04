@@ -35,6 +35,10 @@ import TicketDetailScreen from "../screens/tickets/TicketDetailScreen";
 import ManageTicketsScreen from "../screens/tickets/ManageTicketsScreen";
 import ForwardedTicketsScreen from "../screens/tickets/ForwardedTicketsScreen";
 
+// Sathya — Marks & Results drill-down screens
+import EnterMarksScreen from "../screens/marks/EnterMarksScreen";
+import ResultDetailScreen from "../screens/marks/ResultDetailScreen";
+
 const Stack = createNativeStackNavigator();
 
 const AppNavigator = () => {
@@ -166,6 +170,18 @@ const AppNavigator = () => {
         {/* Mahdhi Ticket screens */}
         <Stack.Screen name="TicketDetail" component={TicketDetailScreen} options={{ headerShown: true, title: "Ticket Details" }} />
         <Stack.Screen name="RaiseTicket" component={RaiseTicketScreen} options={{ headerShown: true, title: "Raise a Ticket" }} />
+
+        {/* Sathya — Marks & Results drill-down screens */}
+        <Stack.Screen
+          name="EnterMarks"
+          component={EnterMarksScreen}
+          options={{ headerShown: true, title: "Enter Marks" }}
+        />
+        <Stack.Screen
+          name="ResultDetail"
+          component={ResultDetailScreen}
+          options={{ headerShown: true, title: "Result Details" }}
+        />
 
       </Stack.Navigator>
     </NavigationContainer>

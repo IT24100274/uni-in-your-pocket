@@ -24,6 +24,11 @@ import TicketsScreen from "./tickets/TicketsScreen";
 import ManageTicketsScreen from "./tickets/ManageTicketsScreen";
 import ForwardedTicketsScreen from "./tickets/ForwardedTicketsScreen";
 
+// Sathya — Marks & Results screens used as hidden tabs
+import ResultsListScreen from "./marks/ResultsListScreen";
+import ManageResultsScreen from "./marks/ManageResultsScreen";
+import AdminResultsScreen from "./marks/AdminResultsScreen";
+
 const Tab = createBottomTabNavigator();
 
 const DashboardScreen = () => {
@@ -155,6 +160,23 @@ const DashboardScreen = () => {
         />
       )}
 
+      {/* Student and rep see My Results tab (hidden) */}
+      {(userRole === "student" ||
+        userRole === "student_representative") && (
+        <Tab.Screen
+          name="MyResults"
+          component={ResultsListScreen}
+          options={{
+            tabBarLabel: "Results",
+            tabBarIcon: ({ color, size }) => (
+              <Ionicons name="ribbon-outline" color={color} size={size} />
+            ),
+            tabBarButton: () => null,
+            tabBarItemStyle: { display: "none" },
+          }}
+        />
+      )}
+
       {/* Lecturer sees My Courses tab */}
       {userRole === "lecturer" && (
         <Tab.Screen
@@ -164,6 +186,22 @@ const DashboardScreen = () => {
             tabBarLabel: "My Courses",
             tabBarIcon: ({ color, size }) => (
               <Ionicons name="library-outline" color={color} size={size} />
+            ),
+            tabBarButton: () => null,
+            tabBarItemStyle: { display: "none" },
+          }}
+        />
+      )}
+
+      {/* Lecturer sees Manage Results tab (hidden) */}
+      {userRole === "lecturer" && (
+        <Tab.Screen
+          name="ManageResults"
+          component={ManageResultsScreen}
+          options={{
+            tabBarLabel: "Manage Results",
+            tabBarIcon: ({ color, size }) => (
+              <Ionicons name="ribbon-outline" color={color} size={size} />
             ),
             tabBarButton: () => null,
             tabBarItemStyle: { display: "none" },
@@ -192,6 +230,22 @@ const DashboardScreen = () => {
             tabBarLabel: "Enrollments",
             tabBarIcon: ({ color, size }) => (
               <Ionicons name="checkmark-circle-outline" color={color} size={size} />
+            ),
+            tabBarButton: () => null,
+            tabBarItemStyle: { display: "none" },
+          }}
+        />
+      )}
+
+      {/* Admin sees All Results tab (hidden) */}
+      {userRole === "admin" && (
+        <Tab.Screen
+          name="AllResults"
+          component={AdminResultsScreen}
+          options={{
+            tabBarLabel: "All Results",
+            tabBarIcon: ({ color, size }) => (
+              <Ionicons name="ribbon-outline" color={color} size={size} />
             ),
             tabBarButton: () => null,
             tabBarItemStyle: { display: "none" },

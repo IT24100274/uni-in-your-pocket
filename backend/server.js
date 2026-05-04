@@ -26,7 +26,8 @@ app.use("/api/courses", require("./routes/courseRoutes"));
 app.use("/api/enrollments", require("./routes/enrollmentRoutes"));
 app.use("/api/assignments", require("./routes/assignmentRoutes"));
 app.use("/api/notices", require("./routes/noticeRoutes"));
-
+//Mohamed's Intrnnship Routes
+app.use("/api/internship", require("./routes/internshipRoutes"));
 //Mahdhi's ticket routes
 app.use("/api/tickets", require("./routes/ticketRoutes"));
 

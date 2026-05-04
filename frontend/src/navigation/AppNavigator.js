@@ -206,12 +206,13 @@ const AppNavigator = () => {
   options={{ headerShown: true, title: "Weekly Log" }}
 />
 <Stack.Screen
-  name="InternshipProgress"
+  name="ProgressDashboard"
   component={ProgressDashboardScreen}
   options={{ headerShown: true, title: "Progress Dashboard" }}
 />
+
 <Stack.Screen
-  name="ReviewInternships"
+  name="Review"
   component={ReviewScreen}
   options={{ headerShown: true, title: "Review Internships" }}
 />

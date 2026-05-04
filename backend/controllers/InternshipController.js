@@ -32,7 +32,7 @@ const createInternship = async (req, res) => {
     if (existing) {
       return res.status(400).json({ message: "You already have an internship" });
     }
-    const { companyName, companyAddress, supervisorName, supervisorEmail, startDate, endDate, courseId } = req.body;
+    const { companyName, companyAddress, supervisorName, supervisorEmail, startDate, endDate, assignedLecturer } = req.body;
     const companyLetterUrl = req.file
       ? await uploadInternshipFile(req.file, "uni-pocket/internships/companyLetters")
       : "";
@@ -45,7 +45,7 @@ const createInternship = async (req, res) => {
       startDate,
       endDate,
       companyLetterUrl,
-      courseId: courseId || null,
+      assignedLecturer: assignedLecturer || null,
     });
     res.status(201).json({ message: "Internship created successfully", internship });
   } catch (error) {
@@ -55,7 +55,8 @@ const createInternship = async (req, res) => {
 
 const getMyInternship = async (req, res) => {
   try {
-    const internship = await Internship.findOne({ studentId: req.user._id }).populate("courseId", "name code");
+     const internship = await Internship.findOne({ studentId: req.user._id })
+       .populate("assignedLecturer", "name email department");
     if (!internship) {
       return res.status(404).json({ message: "No internship found" });
     }
@@ -91,17 +92,17 @@ const updateInternship = async (req, res) => {
     if (internship.status !== "pending") {
       return res.status(400).json({ message: "Cannot update an internship that has already been verified" });
     }
-    const { companyName, companyAddress, supervisorName, supervisorEmail, startDate, endDate, courseId } = req.body;
+    const { companyName, companyAddress, supervisorName, supervisorEmail, startDate, endDate, assignedLecturer } = req.body;
     if (companyName) internship.companyName = companyName;
     if (companyAddress) internship.companyAddress = companyAddress;
     if (supervisorName) internship.supervisorName = supervisorName;
     if (supervisorEmail) internship.supervisorEmail = supervisorEmail;
     if (startDate) internship.startDate = startDate;
     if (endDate) internship.endDate = endDate;
-    if (courseId) internship.courseId = courseId;
     if (req.file) {
       internship.companyLetterUrl = await uploadInternshipFile(req.file, "uni-pocket/internships/companyLetters");
     }
+    if (assignedLecturer) internship.assignedLecturer = assignedLecturer;
     await internship.save();
     res.status(200).json({ message: "Internship updated successfully", internship });
   } catch (error) {
@@ -126,11 +127,32 @@ const deleteInternship = async (req, res) => {
   }
 };
 
+const deleteInternshipById = async (req, res) => {
+  try {
+    const internship = await Internship.findById(req.params.id);
+    if (!internship) {
+      return res.status(404).json({ message: "Internship not found" });
+    }
+    await InternshipLog.deleteMany({ internshipId: internship._id });
+    await Internship.findByIdAndDelete(internship._id);
+    res.status(200).json({ message: "Internship deleted successfully" });
+  } catch (error) {
+    res.status(500).json({ message: "Server error", error: error.message });
+  }
+};
+
 const getAllInternships = async (req, res) => {
   try {
-    const internships = await Internship.find()
-      .populate("studentId", "name email studentId department")
-      .populate("courseId", "name code");
+    let internships;
+    if (req.user.role === "lecturer") {
+      internships = await Internship.find({ assignedLecturer: req.user._id })
+        .populate("studentId", "name email studentId department")
+        .populate("assignedLecturer", "name email department");
+    } else {
+      internships = await Internship.find()
+        .populate("studentId", "name email studentId department")
+        .populate("assignedLecturer", "name email department");
+    }
     res.status(200).json({ count: internships.length, internships });
   } catch (error) {
     res.status(500).json({ message: "Server error", error: error.message });
@@ -302,10 +324,22 @@ const getLogById = async (req, res) => {
 
 const getAllLogs = async (req, res) => {
   try {
-    const logs = await InternshipLog.find()
-      .populate("studentId", "name email studentId department")
-      .populate("internshipId", "companyName status")
-      .sort({ createdAt: -1 });
+    let logs;
+    if (req.user.role === "lecturer") {
+      const assignedInternships = await Internship.find({
+        assignedLecturer: req.user._id,
+      }).select("_id");
+      const internshipIds = assignedInternships.map((i) => i._id);
+      logs = await InternshipLog.find({ internshipId: { $in: internshipIds } })
+        .populate("studentId", "name email studentId department")
+        .populate("internshipId", "companyName status")
+        .sort({ createdAt: -1 });
+    } else {
+      logs = await InternshipLog.find()
+        .populate("studentId", "name email studentId department")
+        .populate("internshipId", "companyName status")
+        .sort({ createdAt: -1 });
+    }
     res.status(200).json({ count: logs.length, logs });
   } catch (error) {
     res.status(500).json({ message: "Server error", error: error.message });
@@ -366,12 +400,75 @@ const getProgressStats = async (req, res) => {
     res.status(500).json({ message: "Server error", error: error.message });
   }
 };
+const getSupervisors = async (req, res) => {
+  try {
+    const User = require("../models/User");
+    // Find the supervisor config document
+    const config = await Internship.findOne({ _type: "supervisorConfig" });
+    const approvedIds = config ? config.approvedSupervisors : [];
+    // Fetch full lecturer details
+    const supervisors = await User.find({
+      _id: { $in: approvedIds },
+      role: "lecturer",
+    }).select("_id name email department");
+    res.status(200).json({ supervisors });
+  } catch (error) {
+    res.status(500).json({ message: "Server error", error: error.message });
+  }
+};
 
+const assignSupervisor = async (req, res) => {
+  try {
+    const { lecturerId } = req.params;
+    let config = await Internship.findOne({ _type: "supervisorConfig" });
+    if (!config) {
+      config = await Internship.create({
+        _type: "supervisorConfig",
+        approvedSupervisors: [],
+        // Required fields — use the admin's user ID for the config entry
+        studentId: req.user._id,
+        companyName: "CONFIG",
+        companyAddress: "CONFIG",
+        supervisorName: "CONFIG",
+        supervisorEmail: "config@system.com",
+        startDate: new Date(),
+        endDate: new Date(),
+      });
+    }
+    const alreadyAdded = config.approvedSupervisors.includes(lecturerId);
+    if (alreadyAdded) {
+      return res.status(400).json({ message: "Lecturer already assigned as supervisor" });
+    }
+    config.approvedSupervisors.push(lecturerId);
+    await config.save();
+    res.status(200).json({ message: "Supervisor assigned successfully" });
+  } catch (error) {
+    res.status(500).json({ message: "Server error", error: error.message });
+  }
+};
+
+const removeSupervisor = async (req, res) => {
+  try {
+    const { lecturerId } = req.params;
+    const config = await Internship.findOne({ _type: "supervisorConfig" });
+    if (!config) {
+      return res.status(404).json({ message: "No supervisor config found" });
+    }
+    config.approvedSupervisors = config.approvedSupervisors.filter(
+      (id) => id.toString() !== lecturerId
+    );
+    await config.save();
+    res.status(200).json({ message: "Supervisor removed successfully" });
+  } catch (error) {
+    res.status(500).json({ message: "Server error", error: error.message });
+  }
+};
 module.exports = {
   createInternship,
   getMyInternship,
   updateInternship,
   deleteInternship,
+  deleteInternshipById,
   getAllInternships,
   verifyInternship,
   updateMilestone,
@@ -383,4 +480,7 @@ module.exports = {
   getAllLogs,
   reviewLog,
   getProgressStats,
+  getSupervisors,
+  assignSupervisor,
+  removeSupervisor,
 };

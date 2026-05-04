@@ -201,7 +201,7 @@ const AppNavigator = () => {
   options={{ headerShown: true, title: "Create Internship" }}
 />
 <Stack.Screen
-  name="InternshipLog"
+  name="Log"
   component={LogScreen}
   options={{ headerShown: true, title: "Weekly Log" }}
 />

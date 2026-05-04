@@ -17,9 +17,10 @@ const upload = multer({ storage: multer.memoryStorage() });
 const uploadToCloudinary = (fileBuffer, folder, resourceType = "auto") => {
   return new Promise((resolve, reject) => {
     const stream = cloudinary.uploader.upload_stream(
-      { 
+      {
         folder: folder,
         resource_type: resourceType,
+        access_mode: "public",
       },
       (error, result) => {
         if (error) reject(error);

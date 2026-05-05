@@ -44,8 +44,8 @@ router.delete("/:id", protect, authorize("admin"), deleteInternshipById);
 router.patch("/:id/verify", protect, authorize("admin"), verifyInternship);
 router.patch("/milestone", protect, authorize("student"), updateMilestone);
 
-// Admin routes
-router.get("/admin/all", protect, authorize("admin"), getAllInternships);
+// Admin & Lecturer routes
+router.get("/admin/all", protect, authorize("admin", "lecturer"), getAllInternships);
 router.get("/admin/risks", protect, authorize("admin"), getRiskFlags);
 
 // Weekly log routes

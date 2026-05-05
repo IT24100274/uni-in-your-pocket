@@ -56,7 +56,8 @@ const createInternship = async (req, res) => {
     });
     res.status(201).json({ message: "Internship created successfully", internship });
   } catch (error) {
-    res.status(500).json({ message: "Server error", error: error.message });
+    console.error("CreateInternship error:", error);
+    res.status(500).json({ message: error.message || "Server error", error: error.message });
   }
 };
 
@@ -410,10 +411,9 @@ const getProgressStats = async (req, res) => {
 const getSupervisors = async (req, res) => {
   try {
     const User = require("../models/User");
-    // Find the supervisor config document
-    const config = await Internship.findOne({ _type: "supervisorConfig" });
-    const approvedIds = config ? config.approvedSupervisors : [];
-    // Fetch full lecturer details
+    // Find the latest supervisor config document if multiples exist
+    const config = await Internship.findOne({ _type: "supervisorConfig" }).sort({ updatedAt: -1 });
+    const approvedIds = Array.isArray(config?.approvedSupervisors) ? config.approvedSupervisors : [];
     const supervisors = await User.find({
       _id: { $in: approvedIds },
       role: "lecturer",
@@ -427,7 +427,7 @@ const getSupervisors = async (req, res) => {
 const assignSupervisor = async (req, res) => {
   try {
     const { lecturerId } = req.params;
-    let config = await Internship.findOne({ _type: "supervisorConfig" });
+    let config = await Internship.findOne({ _type: "supervisorConfig" }).sort({ updatedAt: -1 });
     if (!config) {
       config = await Internship.create({
         _type: "supervisorConfig",
@@ -442,6 +442,9 @@ const assignSupervisor = async (req, res) => {
         endDate: new Date(),
       });
     }
+    config.approvedSupervisors = Array.isArray(config.approvedSupervisors)
+      ? config.approvedSupervisors
+      : [];
     const alreadyAdded = config.approvedSupervisors.includes(lecturerId);
     if (alreadyAdded) {
       return res.status(400).json({ message: "Lecturer already assigned as supervisor" });
@@ -457,13 +460,13 @@ const assignSupervisor = async (req, res) => {
 const removeSupervisor = async (req, res) => {
   try {
     const { lecturerId } = req.params;
-    const config = await Internship.findOne({ _type: "supervisorConfig" });
+    const config = await Internship.findOne({ _type: "supervisorConfig" }).sort({ updatedAt: -1 });
     if (!config) {
       return res.status(404).json({ message: "No supervisor config found" });
     }
-    config.approvedSupervisors = config.approvedSupervisors.filter(
-      (id) => id.toString() !== lecturerId
-    );
+    config.approvedSupervisors = Array.isArray(config.approvedSupervisors)
+      ? config.approvedSupervisors.filter((id) => id.toString() !== lecturerId)
+      : [];
     await config.save();
     res.status(200).json({ message: "Supervisor removed successfully" });
   } catch (error) {

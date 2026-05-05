@@ -78,10 +78,13 @@ const CreateInternshipScreen = ({ navigation }) => {
     try {
       await createInternship(formData);
       Alert.alert("Success", "Internship placement created successfully.", [
-        { text: "OK", onPress: () => navigation.navigate("Internship") },
+        { text: "OK", onPress: () => navigation.navigate("MyInternship") },
       ]);
     } catch (error) {
-      Alert.alert("Error", error.response?.data?.message || "Unable to create your internship placement.");
+      Alert.alert(
+        "Error",
+        error.response?.data?.error || error.response?.data?.message || error.message || "Unable to create your internship placement."
+      );
     } finally {
       setSubmitting(false);
     }

@@ -48,11 +48,11 @@ const ReviewScreen = ({ navigation, route }) => {
       if (role === "lecturer" || role === "admin") {
         const logsRes = await api.get("/internship/logs/all");
         setLogs(logsRes.data.logs);
+        const placementsRes = await api.get("/internship/admin/all");
+        setPlacements(placementsRes.data.internships || []);
       }
 
       if (role === "admin") {
-        const placementsRes = await api.get("/internship/admin/all");
-        setPlacements(placementsRes.data.internships || []);
         const risksRes = await api.get("/internship/admin/risks");
         setRisks(risksRes.data.riskList);
 
@@ -286,80 +286,119 @@ const ReviewScreen = ({ navigation, route }) => {
   if (userRole === "lecturer") {
     return (
       <View style={styles.container}>
-        <View style={styles.filterBar}>
-          {["all", "pending", "approved", "rejected"].map((f) => (
-            <TouchableOpacity
-              key={f}
-              style={[styles.filterChip, filterStatus === f && styles.filterChipActive]}
-              onPress={() => setFilterStatus(f)}
-            >
-              <Text style={[styles.filterChipText, filterStatus === f && styles.filterChipTextActive]}>
-                {f.charAt(0).toUpperCase() + f.slice(1)}
-              </Text>
-            </TouchableOpacity>
-          ))}
+        <View style={styles.tabBar}>
+          <TouchableOpacity
+            style={[styles.tab, activeTab === "logs" && styles.tabActive]}
+            onPress={() => setActiveTab("logs")}
+          >
+            <Text style={[styles.tabText, activeTab === "logs" && styles.tabTextActive]}>All Logs</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.tab, activeTab === "placements" && styles.tabActive]}
+            onPress={() => setActiveTab("placements")}
+          >
+            <Text style={[styles.tabText, activeTab === "placements" && styles.tabTextActive]}>Placements</Text>
+          </TouchableOpacity>
         </View>
 
-        <FlatList
-          data={filteredLogs}
-          keyExtractor={(item) => item._id}
-          contentContainerStyle={styles.listContent}
-          ListEmptyComponent={
-            <View style={styles.emptyBox}>
-              <Text style={styles.emptyIcon}>📋</Text>
-              <Text style={styles.emptyText}>No logs found</Text>
-            </View>
-          }
-          renderItem={({ item }) => (
-            <View style={styles.reviewCard}>
-              <View style={styles.reviewHeader}>
-                <View style={{ flex: 1 }}>
-                  <Text style={styles.reviewName}>{item.studentId?.name} — Week {item.weekNumber}</Text>
-                  <Text style={styles.reviewMeta}>{item.studentId?.studentId} · {new Date(item.logDate).toDateString()}</Text>
-                  <Text style={styles.reviewCompany}>{item.internshipId?.companyName}</Text>
-                </View>
-                <View style={[styles.statusBadge, { backgroundColor: getStatusBg(item.status) }]}>
-                  <Text style={[styles.statusText, { color: getStatusColor(item.status) }]}>
-                    {item.status.toUpperCase()}
-                  </Text>
-                </View>
+        {activeTab === "logs" && (
+          <FlatList
+            data={filteredLogs}
+            keyExtractor={(item) => item._id}
+            contentContainerStyle={styles.listContent}
+            ListEmptyComponent={
+              <View style={styles.emptyBox}>
+                <Text style={styles.emptyIcon}>📋</Text>
+                <Text style={styles.emptyText}>No logs found</Text>
               </View>
-
-              <Text style={styles.reviewBody} numberOfLines={3}>{item.logDescription}</Text>
-
-              {item.evidenceUrl ? (
-                <TouchableOpacity onPress={() => openAttachment(item.evidenceUrl)}>
-                  <Text style={styles.evidenceLink}>📎 View Evidence</Text>
-                </TouchableOpacity>
-              ) : null}
-
-              {item.status === "pending" ? (
-                <>
-                  <TextInput
-                    style={styles.commentInput}
-                    placeholder="Add a comment (optional)..."
-                    onChangeText={setComment}
-                    multiline
-                  />
-                  <View style={styles.btnRow}>
-                    <TouchableOpacity
-                      style={[styles.btn, { backgroundColor: "#059669", flex: 1, marginRight: 6 }]}
-                      onPress={() => handleReview(item._id, "approved")}
-                    >
-                      <Text style={styles.btnText}>✓ Approve</Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity
-                      style={[styles.btn, { backgroundColor: "#dc2626", flex: 1 }]}
-                      onPress={() => handleReview(item._id, "rejected")}
-                    >
-                      <Text style={styles.btnText}>✕ Reject</Text>
-                    </TouchableOpacity>
+            }
+            renderItem={({ item }) => (
+              <View style={styles.reviewCard}>
+                <View style={styles.reviewHeader}>
+                  <View style={{ flex: 1 }}>
+                    <Text style={styles.reviewName}>{item.studentId?.name} — Week {item.weekNumber}</Text>
+                    <Text style={styles.reviewMeta}>{item.studentId?.studentId} · {new Date(item.logDate).toDateString()}</Text>
+                    <Text style={styles.reviewCompany}>{item.internshipId?.companyName}</Text>
                   </View>
-                </>
-              ) : null}
-            </View>
-          )}
-        />
+                  <View style={[styles.statusBadge, { backgroundColor: getStatusBg(item.status) }]}>
+                    <Text style={[styles.statusText, { color: getStatusColor(item.status) }]}>
+                      {item.status.toUpperCase()}
+                    </Text>
+                  </View>
+                </View>
+
+                <Text style={styles.reviewBody} numberOfLines={3}>{item.logDescription}</Text>
+
+                {item.evidenceUrl ? (
+                  <TouchableOpacity onPress={() => openAttachment(item.evidenceUrl)}>
+                    <Text style={styles.evidenceLink}>📎 View Evidence</Text>
+                  </TouchableOpacity>
+                ) : null}
+
+                {item.status === "pending" ? (
+                  <>
+                    <TextInput
+                      style={styles.commentInput}
+                      placeholder="Add a comment (optional)..."
+                      onChangeText={setComment}
+                      multiline
+                    />
+                    <View style={styles.btnRow}>
+                      <TouchableOpacity
+                        style={[styles.btn, { backgroundColor: "#059669", flex: 1, marginRight: 6 }]}
+                        onPress={() => handleReview(item._id, "approved")}
+                      >
+                        <Text style={styles.btnText}>✓ Approve</Text>
+                      </TouchableOpacity>
+                      <TouchableOpacity
+                        style={[styles.btn, { backgroundColor: "#dc2626", flex: 1 }]}
+                        onPress={() => handleReview(item._id, "rejected")}
+                      >
+                        <Text style={styles.btnText}>✕ Reject</Text>
+                      </TouchableOpacity>
+                    </View>
+                  </>
+                ) : null}
+              </View>
+            )}
+          />
+        )}
+
+        {activeTab === "placements" && (
+          <FlatList
+            data={placements}
+            keyExtractor={(item) => item._id}
+            contentContainerStyle={styles.listContent}
+            ListEmptyComponent={
+              <View style={styles.emptyBox}>
+                <Text style={styles.emptyIcon}>📄</Text>
+                <Text style={styles.emptyText}>No assigned internships found</Text>
+              </View>
+            }
+            renderItem={({ item }) => (
+              <View style={styles.reviewCard}>
+                <View style={styles.reviewHeader}>
+                  <View style={{ flex: 1 }}>
+                    <Text style={styles.reviewName}>{item.studentId?.name}</Text>
+                    <Text style={styles.reviewMeta}>{item.studentId?.studentId}</Text>
+                    <Text style={styles.reviewCompany}>{item.companyName}</Text>
+                  </View>
+                  <View style={[styles.statusBadge, { backgroundColor: item.verifiedByAdmin ? "#d1fae5" : "#fef3c7" }]}>
+                    <Text style={[styles.statusText, { color: item.verifiedByAdmin ? "#059669" : "#d97706" }]}>
+                      {item.verifiedByAdmin ? "Verified" : "Unverified"}
+                    </Text>
+                  </View>
+                </View>
+                <Text style={styles.reviewBody}>Supervisor: {item.supervisorName}</Text>
+                {item.companyLetterUrl ? (
+                  <TouchableOpacity onPress={() => openAttachment(item.companyLetterUrl)}>
+                    <Text style={styles.evidenceLink}>📄 View Company Letter</Text>
+                  </TouchableOpacity>
+                ) : null}
+              </View>
+            )}
+          />
+        )}
       </View>
     );
   }

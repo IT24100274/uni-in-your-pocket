@@ -69,6 +69,15 @@ export const createNotice  = (data)     => api.post("/notices", data);
 export const updateNotice  = (id, data) => api.put(`/notices/${id}`, data);
 export const deleteNotice  = (id)       => api.delete(`/notices/${id}`);
 
+// Internship API calls
+export const createInternship = (data) => api.post("/internship", data);
+
+// Internship supervisor management
+export const getSupervisors = () => api.get("/internship/supervisors");
+export const getAllLecturers = () => api.get("/internship/lecturers");
+export const assignSupervisor = (lecturerId) => api.post(`/internship/supervisors/${lecturerId}`);
+export const removeSupervisor = (lecturerId) => api.delete(`/internship/supervisors/${lecturerId}`);
+
 // Sathya — Marks & Results API calls
 export const createResult     = (data)     => api.post("/results", data);
 export const getMyResults     = ()         => api.get("/results/my");

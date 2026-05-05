@@ -39,6 +39,13 @@ import ForwardedTicketsScreen from "../screens/tickets/ForwardedTicketsScreen";
 import EnterMarksScreen from "../screens/marks/EnterMarksScreen";
 import ResultDetailScreen from "../screens/marks/ResultDetailScreen";
 
+// Mo's internship screens
+import InternshipScreen from "../screens/internship/InternshipScreen";
+import CreateInternshipScreen from "../screens/internship/CreateInternshipScreen";
+import LogScreen from "../screens/internship/LogScreen";
+import ProgressDashboardScreen from "../screens/internship/ProgressDashboardScreen";
+import ReviewScreen from "../screens/internship/ReviewScreen";
+
 const Stack = createNativeStackNavigator();
 
 const AppNavigator = () => {
@@ -182,7 +189,33 @@ const AppNavigator = () => {
           component={ResultDetailScreen}
           options={{ headerShown: true, title: "Result Details" }}
         />
+{/* Internship screens */}
+<Stack.Screen
+  name="MyInternship"
+  component={InternshipScreen}
+  options={{ headerShown: true, title: "My Internship" }}
+/>
+<Stack.Screen
+  name="CreateInternship"
+  component={CreateInternshipScreen}
+  options={{ headerShown: true, title: "Create Internship" }}
+/>
+<Stack.Screen
+  name="Log"
+  component={LogScreen}
+  options={{ headerShown: true, title: "Weekly Log" }}
+/>
+<Stack.Screen
+  name="ProgressDashboard"
+  component={ProgressDashboardScreen}
+  options={{ headerShown: true, title: "Progress Dashboard" }}
+/>
 
+<Stack.Screen
+  name="Review"
+  component={ReviewScreen}
+  options={{ headerShown: true, title: "Review Internships" }}
+/>
       </Stack.Navigator>
     </NavigationContainer>
   );

@@ -45,12 +45,18 @@ const HomeScreen = ({ navigation }) => {
     { label: "Notices", icon: "megaphone-outline", route: "Notices" },
   ];
 
-  if (user?.role === "student" || user?.role === "student_representative") {
+ if (user?.role === "student" || user?.role === "student_representative") {
     quickActions.push({ label: "My Tickets", icon: "ticket-outline", route: "MyTickets" });
+    quickActions.push({ label: "Internship", icon: "briefcase-outline", route: "MyInternship" });
   }
 
   if (user?.role === "lecturer") {
     quickActions.push({ label: "My Courses", icon: "library-outline", route: "MyCourses" });
+    quickActions.push({ label: "Review Internships", icon: "clipboard-outline", route: "Review" });
+  }
+
+  if (user?.role === "admin") {
+    quickActions.push({ label: "Review Internships", icon: "clipboard-outline", route: "Review" });
   }
 
   return (

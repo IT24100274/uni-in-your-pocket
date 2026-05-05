@@ -1,6 +1,7 @@
 import React from "react";
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, SafeAreaView } from "react-native";
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, SafeAreaView, Alert } from "react-native";
 import Ionicons from "@expo/vector-icons/Ionicons";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
 const MoreScreen = ({ navigation, route }) => {
   const userRole = route?.params?.userRole;
@@ -13,12 +14,14 @@ const MoreScreen = ({ navigation, route }) => {
     items.push({ label: "My Tickets", route: "MyTickets", icon: "ticket-outline" });
     items.push({ label: "My Enrollments", route: "MyEnrollments", icon: "checkmark-circle-outline" });
     items.push({ label: "My Results", route: "MyResults", icon: "ribbon-outline" });
+    items.push({ label: "My Internship", route: "MyInternship", icon: "briefcase-outline" });
   }
 
   if (userRole === "lecturer") {
     items.push({ label: "My Courses", route: "MyCourses", icon: "library-outline" });
     items.push({ label: "Forwarded Tickets", route: "ForwardedTickets", icon: "mail-unread-outline" });
     items.push({ label: "Manage Results", route: "ManageResults", icon: "ribbon-outline" });
+    items.push({ label: "Review Internships", route: "Review", icon: "clipboard-outline" });
   }
 
   if (userRole === "student_representative") {
@@ -30,7 +33,23 @@ const MoreScreen = ({ navigation, route }) => {
     items.push({ label: "Manage Tickets", route: "ManageTickets", icon: "ticket-outline" });
     items.push({ label: "All Results", route: "AllResults", icon: "ribbon-outline" });
     items.push({ label: "Users", route: "Users", icon: "people-outline" });
+    items.push({ label: "Review Internships", route: "Review", icon: "clipboard-outline" });
   }
+
+  const handleLogout = () => {
+    Alert.alert("Logout", "Are you sure you want to logout?", [
+      { text: "Cancel", style: "cancel" },
+      {
+        text: "Logout",
+        style: "destructive",
+        onPress: async () => {
+          await AsyncStorage.removeItem("token");
+          await AsyncStorage.removeItem("user");
+          navigation.replace("Login");
+        },
+      },
+    ]);
+  };
 
   return (
     <SafeAreaView style={styles.container}>
@@ -39,6 +58,7 @@ const MoreScreen = ({ navigation, route }) => {
           <Text style={styles.title}>More</Text>
           <Text style={styles.subtitle}>Quick access to extra tools</Text>
         </View>
+
         {items.length === 0 ? (
           <Text style={styles.emptyText}>No extra options for your role.</Text>
         ) : (
@@ -58,6 +78,13 @@ const MoreScreen = ({ navigation, route }) => {
             </TouchableOpacity>
           ))
         )}
+
+        {/* Logout Button */}
+        <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
+          <Ionicons name="log-out-outline" size={20} color="#e74c3c" />
+          <Text style={styles.logoutText}>Log Out</Text>
+        </TouchableOpacity>
+
       </ScrollView>
     </SafeAreaView>
   );
@@ -71,6 +98,7 @@ const styles = StyleSheet.create({
   content: {
     padding: 20,
     paddingTop: 8,
+    paddingBottom: 32,
   },
   header: {
     marginBottom: 16,
@@ -121,6 +149,23 @@ const styles = StyleSheet.create({
   emptyText: {
     fontSize: 14,
     color: "#777",
+  },
+  logoutButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+    marginTop: 12,
+    paddingVertical: 14,
+    borderRadius: 10,
+    borderWidth: 1.5,
+    borderColor: "#e74c3c",
+    backgroundColor: "#fff5f5",
+  },
+  logoutText: {
+    fontSize: 16,
+    fontWeight: "600",
+    color: "#e74c3c",
   },
 });
 

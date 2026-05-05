@@ -13,15 +13,22 @@ const { uploadToCloudinary } = require("../config/cloudinary");
 
 const uploadInternshipFile = async (file, folder) => {
   if (!file) return "";
+
+  if (file.path || file.url || file.secure_url) {
+    return file.path || file.url || file.secure_url;
+  }
+
   const originalName = file.originalname || file.name || "";
   const isPdf =
     file.mimetype === "application/pdf" ||
     originalName.toLowerCase().endsWith(".pdf");
   const resourceType = isPdf ? "raw" : "image";
-  const buffer = file.buffer;
+  const buffer = file.buffer || file._buffer;
+
   if (!buffer) {
-    throw new Error("Uploaded file buffer is missing");
+    throw new Error("Uploaded file data is missing");
   }
+
   const result = await uploadToCloudinary(buffer, folder, resourceType);
   return result.secure_url;
 };
